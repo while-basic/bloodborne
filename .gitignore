@@ -12,6 +12,8 @@ opencode.json
 .ignore
 .env
 .env.*
+gh_credentials.md
+*_credentials.md
 .venv/
 
 # User-supplied games, firmware, saves, emulator builds, and runtime output

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.2.1
-# Author:      Celaya Solutions
-# Contact:     hello@celayasolutions.com
+# Version:     v1.2.2
+# Author:      Christopher Celaya
+# Contact:     https://github.com/while-basic
 # Date:        2026-10-12
 # SHA256:      a09711f2b47dd469d9953f007d831ed81d41e9a1d03be187bed395b79d015423
-# Chain:       solana-devnet
-# Tx:          5p6AfJGQiymFMefpmYaCFDYuu8GVgKVZAPMNWxnBVhD13Ktvcb4DrnGFg79kM8r7XKiFk7iKvB38xtSHTnL4pVeG
-# License:     All Rights Reserved / Celaya Solutions
+# Chain:       solana-mainnet
+# Tx:          2M2ZVvuSQBCHy5VTV9tPG9MeXwtmKv1eLEoe7541Q1SFZu2mWYmoks5qfMt8x4yCNTfbGiykSAP4Fia6YGADRGLw
+# License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
 The profile (resolution patch, FPS++ patch, performance patches) is installed into the

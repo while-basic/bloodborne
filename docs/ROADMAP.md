@@ -1,13 +1,13 @@
 ```text
 Document:    Bloodborne Launcher Roadmap
-Version:     v1.0.0
-Author:      Celaya Solutions
-Contact:     hello@celayasolutions.com
+Version:     v1.1.0
+Author:      Christopher Celaya
+Contact:     https://github.com/while-basic
 Date:        2026-10-12
 SHA256:      c125d72443ddee0819f3df0198a66bf133057926e1f4b29dfbce582e87ebdc37
 Chain:       solana-mainnet
 Tx:          41WbevVde7GHfLoj6MWVxoXv6oAvs3KKvPxYhZWcHwwxUDq8bbETQxDHYL4nRXPpDKAfkbf5nyDyagCF4oCcSwsc
-License:     All Rights Reserved / Celaya Solutions
+License:     The Unlicense (public domain dedication)
 ```
 
 # Roadmap

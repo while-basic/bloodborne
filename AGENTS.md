@@ -1,13 +1,13 @@
 ```text
 Document:    Bloodborne Launcher Agent Instructions
-Version:     v1.0.0
-Author:      Celaya Solutions
-Contact:     hello@celayasolutions.com
+Version:     v1.1.0
+Author:      Christopher Celaya
+Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      2abe9dc30ad6c011ebbe94db9a9b53bf6f5d1e032a1b6b8e888a26a1c0ae8f32
+SHA256:      62efe950187c7e65a88aa460e060c5c51aacaed9119f9eb5d0eed7f0352135e9
 Chain:       solana-mainnet
-Tx:          5kEpaXxMdEzSpdKFsNSkWffafi27kMVz6eweV57kMgg2mJR3hW2BcdkF2ZSpzzFu6GZAhoe3SE5C7cg9z2BVmfY8
-License:     All Rights Reserved / Celaya Solutions
+Tx:          4BKg5PQL9xYwEaVXytMeX9JprXMNNJt9FQ5WtpE4jMChmovwKuBzBwdfzfaSQEpKxTwmDHAxYRZPinEsaAXr2NVA
+License:     The Unlicense (public domain dedication)
 ```
 
 # Agent instructions
@@ -21,16 +21,18 @@ License:     All Rights Reserved / Celaya Solutions
   or local agent configuration. Review history as well as the current tree.
 - Keep the current 24–55 FPS report separate from FPS cap settings. A dry run
   cannot verify gameplay. The roadmap order is Mac 90+ FPS, Windows/Linux, browser.
-- Preserve the current All Rights Reserved notice until the owner selects a license.
-- All produced documents need the standard Celaya Solutions header. Anchor
+- This is Christopher Celaya's personal project: https://github.com/while-basic.
+  Original code and docs use the Unlicense; retain third-party credits and rights.
+- Produced documents use the standard header fields with Christopher Celaya as
+  author, the personal GitHub URL as contact, and the Unlicense. Anchor
   changed header-bearing files with docseal on both chains before committing;
   if anchoring fails, stamp and document the reason.
 - After each commit, add or refresh one short completion note here.
 
 ## Public release decisions still open
 
-Confirm the GitHub owner/name and permission to publish; no remote is configured.
-Confirm the source license, exact emulator revision, settings and route for the
+The owner authorized public publication and profile pinning under while-basic.
+Confirm the exact emulator revision, settings and route for the
 24–55 FPS report, target resolution/quality for 90+ FPS, and whether browser work
 means local execution or streaming. The system specs were read from the local
 Mac; confirm it is the same machine used for the reported range.
@@ -41,13 +43,11 @@ was run while preparing these public docs.
 
 ## Completion note
 
-2026-10-12: Public-release preparation adds setup, system specs, roadmap, contribution
-notes, file exclusions, and an honest dry-run result; publication remains pending.
-Prepared on the codex/public-release branch; main and the experimental worktree
-remain unchanged, and no GitHub repository has been created or published.
+2026-10-12: Added agent installation prompts, personal attribution to Christopher
+Celaya / while-basic, and the Unlicense public-domain dedication. Publication and
+profile pinning are authorized; credentials stay ignored and outside Git history.
 Two dry-run tests pass; real local prerequisites pass without launching or writing
 config. History/file screening and ignore checks pass. Gameplay was not retested.
 
-Document sealing: the launcher mainnet transaction did not confirm within docseal's
-60-second window; it may still land. Its devnet anchor succeeded, so the launcher
-header currently records devnet. Local hashes were stamped as the required fallback.
+Document sealing: the earlier launcher mainnet timeout was resolved on retry
+during the personal rebrand. Headers record the latest successful anchors.

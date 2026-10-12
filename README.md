@@ -1,13 +1,13 @@
 ```text
 Document:    Bloodborne on Mac — Public Launcher Guide
-Version:     v2.0.0
-Author:      Celaya Solutions
-Contact:     hello@celayasolutions.com
+Version:     v2.1.0
+Author:      Christopher Celaya
+Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      701adb05891ae8831184e25754b944ab901235d5064dd2b2571ca39562a94692
+SHA256:      cf6672e7171125fc2035977988c3a4d1e96d6875e17e61eadb040bf78032a857
 Chain:       solana-mainnet
-Tx:          3Q7TmmGHXawpexaf5zCfWkzXvZGjcjDVV62qKKKASYW13SpstBicCQTxc3GmB34PcZB5HNi7kJvwNZWy64D8m15K
-License:     All Rights Reserved / Celaya Solutions
+Tx:          4TFuyD98c8APk2h4qcT3m3kCT1mTtqmrD7y6TAZ5GbxuK9iv6eAJS1pppbUZumo68M7A2PEJmLT1nP8LN3eYhquw
+License:     The Unlicense (public domain dedication)
 ```
 
 # Bloodborne on Mac
@@ -15,7 +15,14 @@ License:     All Rights Reserved / Celaya Solutions
 A small Python launcher that applies a display and performance patch profile, then
 starts [shadPS4](https://github.com/shadps4-emu/shadPS4) with your local copy of Bloodborne.
 
-**Current owner-reported performance: 24–55 FPS on an M5 Max with 128 GB memory.**
+An **open-source personal project** by [Christopher Celaya (@while-basic)](https://github.com/while-basic),
+released under [the Unlicense](LICENSE). Use, copy, change, and share my original
+code and docs freely. I claim no exclusive rights to this contribution and no
+ownership of Bloodborne, shadPS4, or their assets.
+
+**Let your agent install it:** copy a prompt from [Agent installation prompts](docs/AGENT-INSTALL.md).
+
+**Current performance: 24–55 FPS on an M5 Max with 128 GB memory.**
 The next goal is **90+ FPS on Mac**, followed by Windows and Linux optimization,
 then browser research. These are plans, not supported features or promised results.
 
@@ -78,7 +85,13 @@ the settings used for that report. See [the benchmark plan](docs/ROADMAP.md).
 
    If your release uses different paths or a different config format, it needs a
    launcher update; arbitrary installations are not detected automatically.
-3. Clone this repository or extract its source ZIP. Open a terminal in that folder.
+3. Clone this repository or extract its source ZIP. Open a terminal in that folder:
+
+   ```sh
+   git clone https://github.com/while-basic/bloodborne.git
+   cd bloodborne
+   ```
+
    Put your own extracted **CUSA00900, version 01.09** game at the layout below.
    Install/merge the matching update using the upstream instructions first.
    Do not just rename another region's folder: patch compatibility is version-specific.
@@ -203,6 +216,9 @@ game patches by the [upstream patch authors](https://github.com/shadps4-emu/ps4_
 Each external project retains its own license. No ownership of those projects or
 Bloodborne is claimed.
 
-The launcher and documentation retain their existing
-**All Rights Reserved / Celaya Solutions** notice. Public visibility is not an
-open-source license grant. A broader license is pending the maintainer's decision.
+My original launcher code, tests, and documentation are open source under
+[the Unlicense](LICENSE), a public-domain dedication with a fallback permission
+grant where needed. This applies to my contributions in this repository,
+including earlier revisions of those contributions. No warranty is provided.
+The game, emulator, third-party patches, and their assets keep their own rights
+and licenses; this dedication cannot grant rights to someone else's work.

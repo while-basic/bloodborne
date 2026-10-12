@@ -1,20 +1,22 @@
 ```text
 Document:    Bloodborne Launcher Contribution Guide
-Version:     v1.0.0
-Author:      Celaya Solutions
-Contact:     hello@celayasolutions.com
+Version:     v1.1.0
+Author:      Christopher Celaya
+Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      93ce4e827c5c7e1541f3fd343a0360c34351d5e57ba1c1493db42fa6fa7c9075
+SHA256:      d1fdfcc4cf409a51b55390a5e24f0c936e5aef7ec4dce14db09145f52578c201
 Chain:       solana-mainnet
-Tx:          us59EmsqVxoPn8D57NHcdiwPJC52JvDThzYgaeFLnpWswUE7xTRq7XAioogh9Bq7NuLRqA8w4hxnfBQ3WYaciEe
-License:     All Rights Reserved / Celaya Solutions
+Tx:          65Q2Brd2QEvAwyZo7hbkCWWWwii5LzWqoGqszXHhmhKxjjGLuVggcfih24WcufrKn67QEXM3ZvcLnoMZv8aUY8MQ
+License:     The Unlicense (public domain dedication)
 ```
 
 # Contributing
 
-Bug reports, setup feedback, and reproducible measurements are welcome.
-The source currently retains All Rights Reserved terms. A broader code
-contribution policy will follow the maintainer's license decision.
+Bug reports, code contributions, setup feedback, and reproducible measurements
+are welcome. This is Christopher Celaya's personal project at
+[while-basic/bloodborne](https://github.com/while-basic/bloodborne).
+Original project code and docs are released under [the Unlicense](LICENSE).
+Contribute only work you have the right to share, under the same terms.
 
 ## Report a problem
 
