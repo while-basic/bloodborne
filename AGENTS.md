@@ -4,9 +4,9 @@ Version:     v1.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      62efe950187c7e65a88aa460e060c5c51aacaed9119f9eb5d0eed7f0352135e9
+SHA256:      7be1cedd8ef041725f35cde1bb889fff9d19efcd4fe0de2aa0bc49ed88dda7cf
 Chain:       solana-mainnet
-Tx:          4BKg5PQL9xYwEaVXytMeX9JprXMNNJt9FQ5WtpE4jMChmovwKuBzBwdfzfaSQEpKxTwmDHAxYRZPinEsaAXr2NVA
+Tx:          2EaVafGtgwDizPXGsK4Ls3uBRsgqa5K39G5RmJzJF3SC1EaExY6EAcCEs7Xue7zqxvfsurNTNHKd28UWd53L1Lbw
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -23,6 +23,8 @@ License:     The Unlicense (public domain dedication)
   cannot verify gameplay. The roadmap order is Mac 90+ FPS, Windows/Linux, browser.
 - This is Christopher Celaya's personal project: https://github.com/while-basic.
   Original code and docs use the Unlicense; retain third-party credits and rights.
+  Keep the upstream standard LICENSE text unchanged for license detection;
+  its document metadata lives in docs/LICENSE-NOTES.md.
 - Produced documents use the standard header fields with Christopher Celaya as
   author, the personal GitHub URL as contact, and the Unlicense. Anchor
   changed header-bearing files with docseal on both chains before committing;
