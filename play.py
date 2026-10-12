@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.2.0
+# Version:     v1.3.0
 # Author:      Celaya Solutions
 # Contact:     hello@celayasolutions.com
 # Date:        2026-10-12
-# SHA256:      f97e4e8629639c6c961fa5f8bc2f246d6007eca66d847213adcdaab5c233c874
+# SHA256:      a48f6742981dd8a79221df1a1d1027a30b996713d3b11dc093e1fafe5edf9ebb
 # Chain:       solana-mainnet
-# Tx:          3wAifi7wrvBfXTAdfjd73krEFRX2gLfUowy6yqFEmCk2wyc3q4mTiCCx2MHfwVDx3ap1i3TJ1UYP2KmNFAM2GpKn
+# Tx:          4rBvQNCTRnJuqi9GJjbfUvtm1pm4qjdRqVsc8pC1vSUeVQgMStb7ATZwhAbmxJUogzsPy2HKx2bjtCgzu3xAuGnr
 # License:     All Rights Reserved / Celaya Solutions
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -22,6 +22,7 @@ import argparse
 import copy
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -33,13 +34,16 @@ SHADPS4_HOME = Path.home() / "Library/Application Support/shadPS4"
 ENGINES = {
     "nightly": Path.home() / "Library/Application Support/shadPS4QtLauncher/versions/Pre-release/shadps4",
     "release": RUNTIME / "Bloodborne Emulator.app/Contents/MacOS/shadps4",
+    # Same nightly binary inside a bundle whose Info.plist declares a game category, so macOS Game Mode can engage.
+    "nightly-app": RUNTIME / "Bloodborne Nightly.app/Contents/MacOS/shadps4",
 }
 GAME = RUNTIME / "games/CUSA00900/eboot.bin"
 CONFIG = SHADPS4_HOME / "config.json"
 PATCH_DIR = SHADPS4_HOME / "patches/bloodborne-profile"
 TITLE_ID = "CUSA00900"
 APP_VER = "01.09"
-SIZES = {"1080p": (1920, 1080), "1440p": (2560, 1440), "4k": (3840, 2160)}
+SIZES = {"720p": (1280, 720), "900p": (1600, 900), "1080p": (1920, 1080), "1440p": (2560, 1440),
+         "4k": (3840, 2160)}
 # Cumulative ladder: --perf N adds every entry up to N. Visual cost grows down the list.
 PERF_LADDER = [
     "Disable Motion Blur (Perf Increase)",
@@ -96,8 +100,11 @@ def write_config(args):
     config = json.loads(original)
     width, height = SIZES[args.resolution]
     config["GPU"].update(internal_screen_width=width, internal_screen_height=height,
-                         vblank_frequency=args.fps, full_screen=args.fullscreen,
-                         full_screen_mode="Fullscreen (Borderless)" if args.fullscreen else "Windowed")
+                         vblank_frequency=args.vblank or args.fps, full_screen=args.fullscreen,
+                         full_screen_mode=("Fullscreen" if args.fullscreen_mode == "exclusive"
+                                           else "Fullscreen (Borderless)") if args.fullscreen else "Windowed")
+    if args.present_mode:
+        config["GPU"]["present_mode"] = args.present_mode
     # The resolution patches allocate bigger frame buffers; they need extra direct memory.
     config["General"].update(extra_dmem_in_mbytes=8192 if args.resolution == "4k" else 4096,
                              show_fps_counter=True)
@@ -118,6 +125,12 @@ def main():
                         help="performance patch ladder level (0 = Performance Patch only; 3 = no visible loss)")
     parser.add_argument("--engine", choices=ENGINES, default="nightly")
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
+    parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",
+                        help="borderless = SDL window over the desktop; exclusive = native macOS fullscreen space")
+    parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
+                        help="emulated vblank rate; default = --fps. Higher than the FPS++ cap removes flip waits")
+    parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
+                        help="swapchain present mode to request (KosmicKrisp only offers the Fifo family)")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
     parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
@@ -146,8 +159,12 @@ def main():
     print(f"Launching {args.engine} engine: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
           f"patches: {', '.join(patches)}", flush=True)
     print(f"Log: {log}", flush=True)
+    env = dict(os.environ)
+    # Exclusive fullscreen is a separate macOS Space; without this SDL hint the game minimizes whenever
+    # another window takes focus, which also drops macOS Game Mode.
+    env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
     with log.open("w") as output:
-        return subprocess.call([str(emulator), "--show-fps", "--game", str(GAME)], cwd=ROOT,
+        return subprocess.call([str(emulator), "--show-fps", "--game", str(GAME)], cwd=ROOT, env=env,
                                stdout=output, stderr=subprocess.STDOUT)
 
 

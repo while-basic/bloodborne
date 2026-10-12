@@ -2,13 +2,13 @@
 
 ```
 Document:    Bloodborne on the M5 Max (shadPS4 launcher worktree)
-Version:     v1.1.0
+Version:     v1.2.0
 Author:      Celaya Solutions
 Contact:     hello@celayasolutions.com
 Date:        2026-10-12
-SHA256:      0cad2538b3017f3891f8e5b5947e20466ee365c6899d148d9a297a9e56dcbc4e
+SHA256:      d4ffeb257848a533d637786c9069b95d091b4c7bb9210ccb1f388487b09fd8cd
 Chain:       solana-mainnet
-Tx:          3eEVDboYoGvBW6BBCX7SkQXACHUUh9dNGAjuuQe4J6nUK2zHMLXmgt91gWVr2oDwiAeFPG9vuBend1uKYh5c6BtK
+Tx:          3sTZDZCp5PCuRsLsmdtGcg1Aw2LCAyvHLiCCVnzc2MLPU6jXQPoHin169pFkQgFLr9ftK4dhXyvv6Bznmqxs2wHn
 License:     All Rights Reserved / Celaya Solutions
 ```
 
@@ -26,6 +26,11 @@ python3 play.py --perf 7              # cheaper visuals ladder: 1 motion blur, 2
                                       # 3 specific renders, 4 dynamic shadows, 5 SSAO, 6 DoF, 7 bloom
 python3 play.py --extra "Disable AA"  # any other patch by its exact name in Bloodborne.xml (repeatable)
 python3 play.py --check               # print the profile without launching
+python3 play.py --engine nightly-app --fullscreen-mode exclusive   # game-category bundle + native fullscreen Space:
+                                      # the only combination where macOS Game Mode engages (see notes: glitch seen once)
+python3 play.py --resolution 720p     # 720p / 900p exist for diagnostics (GPU-bound vs CPU-bound tests)
+python3 play.py --vblank 240          # emulated vblank above the FPS++ cap (pacing test; default = --fps)
+python3 play.py --present-mode Fifo   # KosmicKrisp only offers the Fifo family; a Mailbox request falls back to Fifo
 ```
 
 The script backs up `config.json`, sets the internal resolution and vblank rate, installs the
