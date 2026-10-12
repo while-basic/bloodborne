@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v2.3.0
+Version:     v2.4.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      e18c4d11798d6ba4884fc3569a9402eba4683fbe98bd357d4a6f0843ee7a3d1c
+SHA256:      495fbb74e84e86123355c54efae6221f7e2f4925d92c8f4713ad97807675e83a
 Chain:       solana-mainnet
-Tx:          5iMC4xwDhz76kv5XZn47SAtfvwabLGEHavAAuppo8kGgXyNAvxZUEKvL92adJ7zjvukytkxqy8bweuwnCgNHEzWB
+Tx:          23maDM8uzv3tGnSAoqywFPEdSYswicLWVMsEzzXiuiMaPVWXdLNUmjD9YFQtkVAGV4wKeGyHidE1dQxbRUF4fthe
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -209,12 +209,15 @@ I played with the DualShock while a script read the FPS counter off the screen e
 | perf 7 + Model LOD 1 + 1080p Light Grid | standing at the gate | 51 | 43 | 43 | 49 |
 | default | crowded fight until I died | 48 | 41 | 23 | 60 |
 
-The limit is the CPU, not the GPU. The game's own x86-64 code runs through Rosetta, and
-its main thread sits at 80-90% of one core in every fight. Halving the pixels (720p) only
-added about 6 FPS, and the draw-call patches (shadows off, lower model detail, light grid)
-added a few more while relieving the emulator's second thread, not the game thread. So a
-held 60 in crowds is not something settings can give on this path; the floor in crowds is
-about 41 FPS at 1080p. I'll re-measure after emulator or driver updates.
+Those earlier route tests suggested a CPU limit: reducing the pixel count helped
+only a little, and the game and graphics-command threads both did substantial
+work. CPU/GPU utilization alone does not establish the cause of every slowdown,
+or a guaranteed FPS floor in other scenes.
+
+Later on October 12, a 900p boss attempt felt much worse than 1080p. I restored
+1080p with the 60 FPS target and perf 3, and the next run felt very good. I did
+not collect a new FPS number for that comparison. The working command, larger
+FPS counter setting, and next-session notes are in [PERFORMANCE.md](PERFORMANCE.md).
 
 Two other things from that session:
 

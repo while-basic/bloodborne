@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.3.0
+# Version:     v1.3.1
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-12
-# SHA256:      992cc127e9311d856ada317e97c6a082020d4253c8152a50f42c530504f146cf
+# SHA256:      c56ac047b9df3a6caf4ad5821835960fde62461a544f11d6330a879a9ca929e1
 # Chain:       solana-mainnet
-# Tx:          4ZTzNDGHwehEdfXMwgPShB8uXNYeCYc1NhB7KmMnDgtYrwKSf8etSPSXy7dWQFrWcFEuTy5pNJyMdw9DJPbZrBpS
+# Tx:          5Bt6Fs24FeJK4W4JS4Zc6Y4U9TgcnLBbxX92BzXiBHHm4HcrRjtHFCXt5Xr3sAyfdiwfCpNYfH83P3T4saMufK3W
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -14,9 +14,9 @@ The profile (resolution patch, FPS++ patch, performance patches) is installed in
 shadPS4 patches folder, so the Qt launcher applies the same profile as this script.
 
 Defaults are 1080p / 60 FPS cap / perf 3 / borderless fullscreen with Facegen disabled.
-On my M5 Max that holds 57-60 FPS in quiet spots and drops to about 41-48 in crowded
-fights; the emulator is CPU-bound there (the game's x86-64 code runs through Rosetta),
-so the FPS option sets a target, not a measured result. See README.md for the numbers.
+Earlier M5 Max runs reached 57-60 FPS in quiet spots and about 41-48 in crowded
+fights. The FPS option sets a target, not a measured result or a guaranteed floor.
+See README.md and PERFORMANCE.md for the test context and current working profile.
 """
 import argparse
 import copy

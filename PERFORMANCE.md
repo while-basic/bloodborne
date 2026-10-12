@@ -1,16 +1,67 @@
 ```text
 Document:    Bloodborne Mac Performance Investigation
-Version:     v1.1.0
+Version:     v1.2.0
 Author:      Celaya Solutions
 Contact:     hello@celayasolutions.com
 Date:        2026-10-12
-SHA256:      8564929be3ffec1cdddb3664317498236bc8a9bb7197a7f04335a3bf2e3303f0
+SHA256:      842c52c1ea967f7179a5908790a611887a132e27f6e75e231d8bc075fa449c3b
 Chain:       solana-mainnet
-Tx:          3xSWGfuXjhBZTmBYadp3wa2zQVqQauRNrZNdv9NTQ2bsbN2U4abSCBpV9ut89UbC2r5su6BzRLRooqrC1shmhc82
+Tx:          YY7nudrXgGivSR7K19naFE23jXUHCcUiShXsWVHRpHvdMeNkdePvSKJbesXu5BYVtuc2XQANQv5uNdQxnyEN1Py
 License:     All Rights Reserved / Celaya Solutions
 ```
 
-# Findings
+# Current working profile — October 12, 2026
+
+The restored **1080p / 60 FPS target / performance level 3** run was reported as
+“very good.” Keep this as the starting point for the next session. This is a
+report about how the game felt; no FPS number or frame-time measurement was
+collected for that run.
+
+```sh
+python3 play.py --resolution 1080p --fps 60 --perf 3 --engine nightly \
+  --fullscreen-mode borderless --present-mode Mailbox --vblank 60
+```
+
+The nightly binary, performance patches, and fullscreen mode stayed the same
+across the comparison. The driver does not support Mailbox and logs a fallback
+to Fifo. The FPS overlay is set to `fps_scale=2.500000` in shadPS4's `imgui.ini`;
+that is a local display setting, not an FPS improvement.
+
+| Attempt | Result | Evidence |
+| --- | --- | --- |
+| 1080p before the resolution change | Reported as somewhat smooth | 212 seconds of continuous activity recording |
+| 900p, same 60 FPS target and performance level 3 | Reported as extremely laggy at the boss | 234 seconds of continuous activity recording; runtime 1600×900 buffers verified |
+| Restored 1080p | Reported as very good | Runtime 1920×1080 buffers verified; config matched the pre-test backup |
+
+The 900p resolution patch was removed after that test. No saves were rolled
+back. The earlier three-minute capture expired before the death report was
+processed, so it cannot establish whole-fight coverage. The two later captures
+continued until the user reported death. Their exact combat and death times
+were not observed, and they include travel/loading. Do not use whole-run
+averages as a boss-only benchmark.
+
+For the next session:
+
+- Start from the working 1080p profile above; do not reapply 900p by default.
+- Use only the lightweight recorder while playing. It reads CPU/GPU activity,
+  not the screen or FPS. Wait for the user to report death before stopping it.
+- Use `--seconds 3600 --interval 2` for travel and a boss attempt; renew the
+  recorder if its one-hour limit approaches. Stop only the recorder with
+  Ctrl-C or SIGINT. An intentional interruption preserves the samples and
+  writes a summary with `complete: false` and `KeyboardInterrupt`.
+- Mark menu, travel, combat, and death reports in the local event log. Do not
+  infer a death or FPS drop from utilization alone.
+- If more diagnosis is needed, first collect readable FPS or frame times from
+  the same scene. Heavy Metal/Instruments tracing must stay off during play.
+
+Private evidence stays under `runtime/`: the 1080p and 900p attempts are
+`profiles/20261012T172604681876Z/` and `profiles/20261012T173400966672Z/`.
+The restored session log is
+`sessions/20261012-113851-196746-1080p-60-perf3-nightly.log`.
+The pre-test settings and save backup is
+`test-backups/20261012T173220Z-before-900p/`. Keep these files out of Git.
+
+# Native-port findings
 
 The provided Codex folder contains the owner's PS4 backup, game packages, packaging
 tools, and emulator downloads. Its `eboot.bin` is an x86-64 FreeBSD ELF executable,
@@ -94,8 +145,9 @@ A fresh, light 60-second capture after the heavy profiler was stopped produced
 The GPU is active, and there is sustained CPU work in game execution, graphics
 command processing, and Rosetta exception handling. These counters do not prove
 which stage limits frame rate. The user has not supplied an FPS number, and a
-valid GPU frame-time trace was not obtained. Whether the perceived boss-fight
-lag eased after stopping the trace has not been confirmed.
+valid GPU frame-time trace was not obtained. At that point, whether the perceived
+boss-fight lag eased after stopping the trace had not been confirmed. The later
+resolution comparison and restored 1080p result are recorded above.
 
 Evidence is private under `runtime/profiles/20261012T170225632651Z/` (mixed
 startup/play/trace run, context, and event log) and
@@ -107,7 +159,7 @@ settings, game files, or saves were changed.
 Run this while the existing game is active:
 
 ```sh
-python3 profile_runtime.py --seconds 60 --label "standing in Central Yharnam"
+python3 profile_runtime.py --seconds 3600 --interval 2 --label "travel and boss attempt"
 ```
 
 The recorder reads macOS thread counters and Apple GPU counters every two
@@ -138,5 +190,6 @@ emulator experiment should count and time those faults and CPU compatibility
 handlers in a local instrumented build before changing their behavior. Do not
 disable memory protection or assume direct-memory-access settings are a fix.
 
-No emulator or game performance settings were changed during this investigation.
-No native port, renderer replacement, or FPS improvement has been delivered.
+The 900p trial changed resolution and was reverted after worse reported play.
+No native port or renderer replacement has been delivered. The restored 1080p
+result above is reported play quality, not a measured FPS increase.
