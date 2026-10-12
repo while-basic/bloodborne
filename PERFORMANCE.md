@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne Mac Performance Investigation
-Version:     v1.0.0
+Version:     v1.1.0
 Author:      Celaya Solutions
 Contact:     hello@celayasolutions.com
 Date:        2026-10-12
-SHA256:      d75dba805d8d52ac8b98b647bdd8d909072122d08a5b7e90af3d97e08c904914
+SHA256:      8564929be3ffec1cdddb3664317498236bc8a9bb7197a7f04335a3bf2e3303f0
 Chain:       solana-mainnet
-Tx:          5FAo9LBALJ9C1iPszyAwrfxbamissFEQZ49aPcmLBovsvisLH2XJq2QeCMkbLho8ciDNUTBWoh635TogWaZV1Nt1
+Tx:          3xSWGfuXjhBZTmBYadp3wa2zQVqQauRNrZNdv9NTQ2bsbN2U4abSCBpV9ut89UbC2r5su6BzRLRooqrC1shmhc82
 License:     All Rights Reserved / Celaya Solutions
 ```
 
@@ -60,6 +60,48 @@ crashed in Apple's exporter. The raw recording and exports remain local under
 `runtime/profiling-20261012/`. Raw Instruments traces can contain process
 environment values and must remain private and untracked.
 
+# Confirmed play session at 11:02–11:08 local time
+
+The user said play was starting and then reported extreme lag during a boss
+fight. The old process exited as the first capture began; that four-sample run
+is incomplete and excluded. A new emulator process, PID 60641, was detected and
+recorded for 120 seconds (59 samples). Settings remained 1080p, 60 FPS cap, perf
+level 3, with Disable Facegen enabled.
+
+Before the heavier trace began, a 39-second normal-play window showed medians of
+79.3% for Game:Main, 74.0% for the GPU command processor, 50.8% for Rosetta's
+exception server, and 78.5% whole-machine GPU utilization. This was a changing
+play scene, not a fixed-camera A/B test.
+
+A 20-second Metal System Trace was attempted. Its recorder spent several more
+minutes processing, reached about 176% CPU and 16 GB resident memory, and produced
+a large partial trace. This overlapped the user's report of boss-fight lag and
+may have contributed to it. SIGINT did not promptly stop processing, so SIGTERM
+was sent to the profiler only. The profiler was verified absent and the game
+remained running. **The trace is incomplete, and its overlap period is excluded
+from normal-performance conclusions. Do not repeat heavy tracing during combat.**
+
+A fresh, light 60-second capture after the heavy profiler was stopped produced
+30 complete samples:
+
+| Measurement | Median | Range |
+| --- | ---: | ---: |
+| Game main thread, one-core CPU percentage | 82.19% | 79.89–83.58% |
+| GPU command processor, one-core CPU percentage | 69.61% | 67.97–76.43% |
+| Rosetta exception server, one-core CPU percentage | 48.69% | 46.66–51.45% |
+| Whole-machine GPU utilization | 74% | 70–91% |
+
+The GPU is active, and there is sustained CPU work in game execution, graphics
+command processing, and Rosetta exception handling. These counters do not prove
+which stage limits frame rate. The user has not supplied an FPS number, and a
+valid GPU frame-time trace was not obtained. Whether the perceived boss-fight
+lag eased after stopping the trace has not been confirmed.
+
+Evidence is private under `runtime/profiles/20261012T170225632651Z/` (mixed
+startup/play/trace run, context, and event log) and
+`runtime/profiles/20261012T170731024562Z/` (clean light follow-up). No emulator
+settings, game files, or saves were changed.
+
 # Repeatable passive capture
 
 Run this while the existing game is active:
@@ -84,8 +126,9 @@ attempt to reuse an output directory left the original summary unchanged.
 
 First obtain two stable captures at the same busy outdoor location, with the
 same camera, resolution, patches, and warm shader cache. Record the visible FPS
-alongside the capture and exclude death/loading intervals. Then collect GPU
-frame timing with Metal System Trace to distinguish graphics work from waits.
+alongside the capture and exclude death/loading intervals. Use a low-overhead frame-time source to distinguish graphics work from waits;
+the heavy Metal trace attempted above disturbed the run and is not suitable
+while the user is fighting.
 
 The observed Rosetta exception load makes CPU compatibility and memory tracking
 worth inspecting, but does not establish the cause. The matching source handles
