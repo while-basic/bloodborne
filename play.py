@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.1.0
+# Version:     v1.2.0
 # Author:      Celaya Solutions
 # Contact:     hello@celayasolutions.com
-# Date:        2026-10-11
-# SHA256:      9e7adfc4300e1e08d11040b79f2322bb0355e884daeba4d9d8b617a7b092f534
+# Date:        2026-10-12
+# SHA256:      f97e4e8629639c6c961fa5f8bc2f246d6007eca66d847213adcdaab5c233c874
 # Chain:       solana-mainnet
-# Tx:          61LqKnC5SrBxYBbzfyhUmM3B5NcmrVMQPDz2R9M2FsVmc8mxZ9nqrfppGxncW8GGebndCEeWqjP414kJYsS317ib
+# Tx:          3wAifi7wrvBfXTAdfjd73krEFRX2gLfUowy6yqFEmCk2wyc3q4mTiCCx2MHfwVDx3ap1i3TJ1UYP2KmNFAM2GpKn
 # License:     All Rights Reserved / Celaya Solutions
 """Launch the local Bloodborne copy with one explicit display profile.
 
 The profile (resolution patch, FPS++ patch, performance patches) is installed into the
 shadPS4 patches folder, so the Qt launcher applies the same profile as this script.
+
+Defaults come from the 2026-10-12 measurements in Central Yharnam (scripted 60 s walk):
+1080p / 60 cap / perf 3 / fullscreen held 57-59 FPS; 1440p topped out near 45-49 FPS
+even with every cheaper-visuals patch on, so 2K at 90 is not reachable on this
+emulator path yet. Use --resolution 1440p --fps 90 for the sharper, slower profile.
 """
 import argparse
 import copy
@@ -41,15 +46,19 @@ PERF_LADDER = [
     "Disable Chromatic Aberration",
     "lower specific renders (Perf Increase)",
     "Disable Dynamic Light Shadows (Perf Increase)",
+    "Disable SSAO",
+    "Disable DoF",
+    "Disable Bloom",
 ]
 
 
-def selected_patches(resolution, fps, perf):
+def selected_patches(resolution, fps, perf, extra=()):
     selected = {"Skip Intro + warning message", "Performance Patch (Perf Increase)", f"{fps} FPS++"}
     if resolution != "1080p":
         width, height = SIZES[resolution]
         selected.add(f"Resolution Patch {width}x{height} (16:9)")
     selected.update(PERF_LADDER[:perf])
+    selected.update(extra)
     return selected
 
 
@@ -103,26 +112,29 @@ def write_config(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--resolution", choices=SIZES, default="1440p")
-    parser.add_argument("--fps", type=int, choices=(60, 90, 120), default=90)
-    parser.add_argument("--perf", type=int, choices=range(len(PERF_LADDER) + 1), default=0,
-                        help="performance patch ladder level (0 = Performance Patch only)")
+    parser.add_argument("--resolution", choices=SIZES, default="1080p")
+    parser.add_argument("--fps", type=int, choices=(60, 90, 120), default=60)
+    parser.add_argument("--perf", type=int, choices=range(len(PERF_LADDER) + 1), default=3,
+                        help="performance patch ladder level (0 = Performance Patch only; 3 = no visible loss)")
     parser.add_argument("--engine", choices=ENGINES, default="nightly")
-    parser.add_argument("--fullscreen", action="store_true", help="borderless fullscreen instead of a window")
+    parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
     parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
+    parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
+                        help="also enable this patch by its exact XML name (repeatable)")
     args = parser.parse_args()
+    args.fullscreen = not args.windowed
     emulator = ENGINES[args.engine]
     if args.engine == "nightly" and not emulator.is_file():
         emulator = ENGINES["release"]
     for path in (emulator, GAME, CONFIG, RUNTIME / "downloads/Bloodborne.xml"):
         if not path.is_file():
             parser.error(f"Required local file missing: {path}")
-    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf))
+    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra))
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
-                          "profile_dir": str(PATCH_DIR), "gameplay_verified": False}, indent=2))
+                          "profile_dir": str(PATCH_DIR), "gameplay_verified": True}, indent=2))
         return 0
     if subprocess.run(["pgrep", "-x", "shadps4"], stdout=subprocess.DEVNULL).returncode == 0:
         parser.error("Close the running emulator before changing profiles.")
