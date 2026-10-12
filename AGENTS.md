@@ -4,9 +4,9 @@ Version:     v1.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      7be1cedd8ef041725f35cde1bb889fff9d19efcd4fe0de2aa0bc49ed88dda7cf
-Chain:       solana-mainnet
-Tx:          2EaVafGtgwDizPXGsK4Ls3uBRsgqa5K39G5RmJzJF3SC1EaExY6EAcCEs7Xue7zqxvfsurNTNHKd28UWd53L1Lbw
+SHA256:      3bbb23c91c36bfcae15db8e05acf4a8536791285d3275f0b2e55595c49ea3697
+Chain:       solana-devnet
+Tx:          5hX5RtKdaARviLyfrj7d2ey1SFFEhdRhJXG4WZhGnYiKaoX7hjU9VjWvAfAwP2ap2WKCEsvPAfuWCN7mFnvX6tbZ
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -45,11 +45,13 @@ was run while preparing these public docs.
 
 ## Completion note
 
-2026-10-12: Added agent installation prompts, personal attribution to Christopher
-Celaya / while-basic, and the Unlicense public-domain dedication. Publication and
-profile pinning are authorized; credentials stay ignored and outside Git history.
+2026-10-12: Published https://github.com/while-basic/bloodborne and verified its
+profile pin. Added agent install/repair/update prompts, Christopher Celaya /
+while-basic attribution, and GitHub-recognized Unlicense terms; credentials stay local.
 Two dry-run tests pass; real local prerequisites pass without launching or writing
 config. History/file screening and ignore checks pass. Gameplay was not retested.
 
 Document sealing: the earlier launcher mainnet timeout was resolved on retry
 during the personal rebrand. Headers record the latest successful anchors.
+The license-notes mainnet submission failed simulation; its devnet anchor and
+local hash stamp succeeded, and its header records that available evidence.
