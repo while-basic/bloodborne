@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne Launcher Agent Instructions
-Version:     v1.1.0
+Version:     v1.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      5c49de6018a09cbb5fc266780c0bf0a6da55f059e2daede9737e6a370ca36591
-Chain:       solana-mainnet
-Tx:          4aocaLGnYuVBcBfBzURv1Nng7MtVHnoWr8ukwRydVqewqb1pYibT6aaSodGNNyrqWe9btDTaVCAqa8mYziop75md
+SHA256:      baec931ccd3a0c7e2eae01e2cc0b8639f5a9aaf62fb7dedc66dc8900c3902833
+Chain:       solana-devnet
+Tx:          Y4w3CxWxhQKSap1u9rRJHL95fXHXV1jvbkSeSs1J4166UaBiXBgaNkVLQ7hH6K2MRJEkWsvvBpPVvbyayAwv6aH
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -57,3 +57,11 @@ Document sealing: the earlier launcher mainnet timeout was resolved on retry
 during the personal rebrand. Headers record the latest successful anchors.
 The license-notes mainnet submission failed simulation; its devnet anchor and
 local hash stamp succeeded, and its header records that available evidence.
+
+2026-10-12 (later): Merged the m5-emulation launcher work into main after live-play
+measurements: `--engine nightly-app` (game-category bundle, the only way macOS Game Mode
+engages, exclusive fullscreen only), `--fullscreen-mode`, `--present-mode`, `--vblank`,
+720p/900p test sizes, Facegen disabled by default (`--keep-facegen`). README carries the
+measured table and the CPU-bound conclusion (crowd floor ~41 FPS at 1080p). Local checks
+pass (2 tests, py_compile, --help, diff --check). Gameplay was measured by hand with the
+DualShock, not by a scripted route.

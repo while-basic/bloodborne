@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v2.2.0
+Version:     v2.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      a78f1f38a078d1df4a12e00875dd5971c9773f51b0e6177a11015607bad176ea
+SHA256:      e18c4d11798d6ba4884fc3569a9402eba4683fbe98bd357d4a6f0843ee7a3d1c
 Chain:       solana-mainnet
-Tx:          2chNAspFHaxFNLz11QcnNoxJqfMhW74rKpdMYrEehiunCoKtr55LYoZcFTC6nZ6HUMUrAp2zKb84nRgSGEWoHoBK
+Tx:          5iMC4xwDhz76kv5XZn47SAtfvwabLGEHavAAuppo8kGgXyNAvxZUEKvL92adJ7zjvukytkxqy8bweuwnCgNHEzWB
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -136,6 +136,10 @@ python3 play.py --windowed
 python3 play.py --resolution 1440p --fps 90 --perf 7
 python3 play.py --extra "Disable AA" --check
 python3 play.py --no-log
+python3 play.py --resolution 720p             # 720p and 900p are there for testing, not for looks
+python3 play.py --perf 4                      # shadows off: a few more FPS in crowds
+python3 play.py --keep-facegen                # put Facegen back (see below)
+python3 play.py --engine nightly-app --fullscreen-mode exclusive   # Game Mode experiment, read below first
 ```
 
 You can choose 1080p, 1440p, or 4k, with a 60, 90, or 120 FPS cap. Setting the
@@ -193,6 +197,33 @@ Restarting the game may help.
 Some earlier short test runs showed higher peaks than 24–55 FPS. I want to test
 the same route on a fixed emulator build before putting out a proper benchmark.
 For now, I'm using the range I'm seeing while playing.
+
+### What I measured on October 12
+
+I played with the DualShock while a script read the FPS counter off the screen every second or two.
+
+| Profile | Where | median | slowest 10% | min | max |
+| --- | --- | ---: | ---: | ---: | ---: |
+| default (1080p, 60 cap, perf 3) | carriage fight, gate | 47 | 43 | 37 | 60 |
+| default at 720p | bonfire mob | 53 | 48 | 37 | 60 |
+| perf 7 + Model LOD 1 + 1080p Light Grid | standing at the gate | 51 | 43 | 43 | 49 |
+| default | crowded fight until I died | 48 | 41 | 23 | 60 |
+
+The limit is the CPU, not the GPU. The game's own x86-64 code runs through Rosetta, and
+its main thread sits at 80-90% of one core in every fight. Halving the pixels (720p) only
+added about 6 FPS, and the draw-call patches (shadows off, lower model detail, light grid)
+added a few more while relieving the emulator's second thread, not the game thread. So a
+held 60 in crowds is not something settings can give on this path; the floor in crowds is
+about 41 FPS at 1080p. I'll re-measure after emulator or driver updates.
+
+Two other things from that session:
+
+- The spiky-geometry glitch (characters exploding into shapes) is the known Facegen bug.
+  `Disable Facegen` is now part of the default profile; `--keep-facegen` restores it.
+- macOS Game Mode never turned on for a bare binary. It does turn on when the nightly is
+  wrapped in an app bundle with a game category (`--engine nightly-app`) and run in
+  exclusive fullscreen, but that window disappeared as soon as another app took focus, so
+  I have no Game Mode numbers yet. The bundle lives under `runtime/` and is ignored by git.
 
 [Here's what I want to work on next.](docs/ROADMAP.md)
 If you try it, [send your specs and results](CONTRIBUTING.md).

@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.2.2
+# Version:     v1.3.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-12
-# SHA256:      a09711f2b47dd469d9953f007d831ed81d41e9a1d03be187bed395b79d015423
+# SHA256:      992cc127e9311d856ada317e97c6a082020d4253c8152a50f42c530504f146cf
 # Chain:       solana-mainnet
-# Tx:          2M2ZVvuSQBCHy5VTV9tPG9MeXwtmKv1eLEoe7541Q1SFZu2mWYmoks5qfMt8x4yCNTfbGiykSAP4Fia6YGADRGLw
+# Tx:          4ZTzNDGHwehEdfXMwgPShB8uXNYeCYc1NhB7KmMnDgtYrwKSf8etSPSXy7dWQFrWcFEuTy5pNJyMdw9DJPbZrBpS
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
 The profile (resolution patch, FPS++ patch, performance patches) is installed into the
 shadPS4 patches folder, so the Qt launcher applies the same profile as this script.
 
-Defaults are 1080p / 60 FPS cap / perf 3 / fullscreen. Current owner-reported
-gameplay is 24-55 FPS on an M5 Max with 128 GB unified memory. The FPS option
-sets a target, not a measured result. See README.md for setup and limitations.
+Defaults are 1080p / 60 FPS cap / perf 3 / borderless fullscreen with Facegen disabled.
+On my M5 Max that holds 57-60 FPS in quiet spots and drops to about 41-48 in crowded
+fights; the emulator is CPU-bound there (the game's x86-64 code runs through Rosetta),
+so the FPS option sets a target, not a measured result. See README.md for the numbers.
 """
 import argparse
 import copy
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -32,13 +34,16 @@ SHADPS4_HOME = Path.home() / "Library/Application Support/shadPS4"
 ENGINES = {
     "nightly": Path.home() / "Library/Application Support/shadPS4QtLauncher/versions/Pre-release/shadps4",
     "release": RUNTIME / "Bloodborne Emulator.app/Contents/MacOS/shadps4",
+    # Same nightly binary inside a bundle whose Info.plist declares a game category, so macOS Game Mode can engage.
+    "nightly-app": RUNTIME / "Bloodborne Nightly.app/Contents/MacOS/shadps4",
 }
 GAME = RUNTIME / "games/CUSA00900/eboot.bin"
 CONFIG = SHADPS4_HOME / "config.json"
 PATCH_DIR = SHADPS4_HOME / "patches/bloodborne-profile"
 TITLE_ID = "CUSA00900"
 APP_VER = "01.09"
-SIZES = {"1080p": (1920, 1080), "1440p": (2560, 1440), "4k": (3840, 2160)}
+SIZES = {"720p": (1280, 720), "900p": (1600, 900), "1080p": (1920, 1080), "1440p": (2560, 1440),
+         "4k": (3840, 2160)}
 # Cumulative ladder: --perf N adds every entry up to N. Visual cost grows down the list.
 PERF_LADDER = [
     "Disable Motion Blur (Perf Increase)",
@@ -51,8 +56,11 @@ PERF_LADDER = [
 ]
 
 
-def selected_patches(resolution, fps, perf, extra=()):
+def selected_patches(resolution, fps, perf, extra=(), keep_facegen=False):
     selected = {"Skip Intro + warning message", "Performance Patch (Perf Increase)", f"{fps} FPS++"}
+    if not keep_facegen:
+        # Facegen "vertex explosions" (random spiky geometry on characters) hit twice on 2026-10-12.
+        selected.add("Disable Facegen")
     if resolution != "1080p":
         width, height = SIZES[resolution]
         selected.add(f"Resolution Patch {width}x{height} (16:9)")
@@ -95,8 +103,11 @@ def write_config(args):
     config = json.loads(original)
     width, height = SIZES[args.resolution]
     config["GPU"].update(internal_screen_width=width, internal_screen_height=height,
-                         vblank_frequency=args.fps, full_screen=args.fullscreen,
-                         full_screen_mode="Fullscreen (Borderless)" if args.fullscreen else "Windowed")
+                         vblank_frequency=args.vblank or args.fps, full_screen=args.fullscreen,
+                         full_screen_mode=("Fullscreen" if args.fullscreen_mode == "exclusive"
+                                           else "Fullscreen (Borderless)") if args.fullscreen else "Windowed")
+    if args.present_mode:
+        config["GPU"]["present_mode"] = args.present_mode
     # The resolution patches allocate bigger frame buffers; they need extra direct memory.
     config["General"].update(extra_dmem_in_mbytes=8192 if args.resolution == "4k" else 4096,
                              show_fps_counter=True)
@@ -117,6 +128,14 @@ def main():
                         help="performance patch ladder level (0 = base patches only; 3 = first three optional effects patches)")
     parser.add_argument("--engine", choices=ENGINES, default="nightly")
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
+    parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",
+                        help="borderless = SDL window over the desktop; exclusive = native macOS fullscreen space")
+    parser.add_argument("--keep-facegen", action="store_true",
+                        help="leave Facegen enabled (default disables it to stop the spiky-geometry glitch)")
+    parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
+                        help="emulated vblank rate; default = --fps. Higher than the FPS++ cap removes flip waits")
+    parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
+                        help="swapchain present mode to request (KosmicKrisp only offers the Fifo family)")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
     parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
@@ -129,7 +148,8 @@ def main():
     for path in (emulator, GAME, CONFIG, RUNTIME / "downloads/Bloodborne.xml"):
         if not path.is_file():
             parser.error(f"Required local file missing: {path}")
-    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra))
+    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra,
+                                                     args.keep_facegen))
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
@@ -146,8 +166,12 @@ def main():
     print(f"Launching {args.engine} engine: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
           f"patches: {', '.join(patches)}", flush=True)
     print(f"Log: {log}", flush=True)
+    env = dict(os.environ)
+    # Exclusive fullscreen is a separate macOS Space; without this SDL hint the game minimizes whenever
+    # another window takes focus, which also drops macOS Game Mode.
+    env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
     with log.open("w") as output:
-        return subprocess.call([str(emulator), "--show-fps", "--game", str(GAME)], cwd=ROOT,
+        return subprocess.call([str(emulator), "--show-fps", "--game", str(GAME)], cwd=ROOT, env=env,
                                stdout=output, stderr=subprocess.STDOUT)
 
 
