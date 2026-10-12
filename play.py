@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.3.0
+# Version:     v1.4.0
 # Author:      Celaya Solutions
 # Contact:     hello@celayasolutions.com
 # Date:        2026-10-12
-# SHA256:      a48f6742981dd8a79221df1a1d1027a30b996713d3b11dc093e1fafe5edf9ebb
+# SHA256:      e7140dc24f934071f41d8f792962df8bbc356d31457da248409aefc5e47a1875
 # Chain:       solana-mainnet
-# Tx:          4rBvQNCTRnJuqi9GJjbfUvtm1pm4qjdRqVsc8pC1vSUeVQgMStb7ATZwhAbmxJUogzsPy2HKx2bjtCgzu3xAuGnr
+# Tx:          5gBQC4dh9b7KwWyVmEFZuRXK52D6Xt9QRNJwbVcNpHBbL4YoKhDUDzfx6jzbmfVNbEgaZUqvgngbbKvAgSWLboUE
 # License:     All Rights Reserved / Celaya Solutions
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -56,8 +56,11 @@ PERF_LADDER = [
 ]
 
 
-def selected_patches(resolution, fps, perf, extra=()):
+def selected_patches(resolution, fps, perf, extra=(), keep_facegen=False):
     selected = {"Skip Intro + warning message", "Performance Patch (Perf Increase)", f"{fps} FPS++"}
+    if not keep_facegen:
+        # Facegen "vertex explosions" (random spiky geometry on characters) hit twice on 2026-10-12.
+        selected.add("Disable Facegen")
     if resolution != "1080p":
         width, height = SIZES[resolution]
         selected.add(f"Resolution Patch {width}x{height} (16:9)")
@@ -127,6 +130,8 @@ def main():
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
     parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",
                         help="borderless = SDL window over the desktop; exclusive = native macOS fullscreen space")
+    parser.add_argument("--keep-facegen", action="store_true",
+                        help="leave Facegen enabled (default disables it to stop the spiky-geometry glitch)")
     parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
                         help="emulated vblank rate; default = --fps. Higher than the FPS++ cap removes flip waits")
     parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
@@ -143,7 +148,8 @@ def main():
     for path in (emulator, GAME, CONFIG, RUNTIME / "downloads/Bloodborne.xml"):
         if not path.is_file():
             parser.error(f"Required local file missing: {path}")
-    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra))
+    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra,
+                                                     args.keep_facegen))
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,

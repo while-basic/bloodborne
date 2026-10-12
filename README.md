@@ -2,13 +2,13 @@
 
 ```
 Document:    Bloodborne on the M5 Max (shadPS4 launcher worktree)
-Version:     v1.2.0
+Version:     v1.3.0
 Author:      Celaya Solutions
 Contact:     hello@celayasolutions.com
 Date:        2026-10-12
-SHA256:      d4ffeb257848a533d637786c9069b95d091b4c7bb9210ccb1f388487b09fd8cd
+SHA256:      4a6935b1c0604c2ea9967a228baa5564f407dea1db1dba7911bb418f83c1ae79
 Chain:       solana-mainnet
-Tx:          3sTZDZCp5PCuRsLsmdtGcg1Aw2LCAyvHLiCCVnzc2MLPU6jXQPoHin169pFkQgFLr9ftK4dhXyvv6Bznmqxs2wHn
+Tx:          27gxGHDwdjhRctJZHqbrF8WWzt2iyFMthvkw561hosM2zTbn8JVvBRMGw4kZ7nHx5ukVrH4sAh5a9Tv1Z1SPCkw9
 License:     All Rights Reserved / Celaya Solutions
 ```
 
@@ -65,6 +65,25 @@ at 1440p/90 the overlay sat at 37 (28 to 42). Reading: 1440p is pixel-bound in t
 Metal path (1080p nearly doubles it); at 1080p the limit moves to CPU-side emulation under
 Rosetta (cheaper effects stop helping), so 90 FPS is out of reach at any resolution on this
 emulator build. Run-to-run noise is about +/-5 because the character drifts a little each run.
+
+## Measured again (2026-10-12, live play with the DualShock, FPS overlay read by OCR every ~1-2 s)
+
+| Run | Profile | Scene | median | p10 | min | max |
+|-----|---------|-------|-------:|----:|----:|----:|
+| r0 | default (1080p, 60 cap, perf 3, borderless) | carriage fight + gate vista | 47 | 43 | 37 | 60 |
+| r1 | same at **720p** internal | bonfire mob | 53 | 48 | 37 | 60 |
+| r4 | default via the game-category bundle, borderless | gate vista + fights | 45 | 39 | 32 | 49 |
+| r5c | perf 7 + Model LOD 1 + 1080p Light Grid | gate vista, standing | 45 (51 standing) | 43 | 43 | 49 |
+| r7b | default | crowded fight to death | 48 | 41 | 23 | 60 |
+
+What the numbers mean: the hottest emulator thread sits at 77-90% of one core in every run (the
+game's own x86-64 code under Rosetta); halving the pixels (720p) adds ~6 FPS and the draw-call
+patches add ~3-8 at a static spot while relieving only the second thread (shadPS4's GPU command
+processor, 72-75% -> 63%). 60 FPS held in crowds is therefore not reachable on this emulator path;
+the crowd floor is ~41 FPS at 1080p. macOS Game Mode engages only for the bundle in exclusive
+fullscreen, and that window vanishes when another app takes focus, so it is not usable yet.
+Facegen vertex explosions (spiky geometry) appeared twice; `Disable Facegen` is now in the default
+profile (`--keep-facegen` restores it).
 
 ## Known limits
 
