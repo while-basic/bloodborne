@@ -4,9 +4,9 @@ Version:     v1.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      3bbb23c91c36bfcae15db8e05acf4a8536791285d3275f0b2e55595c49ea3697
-Chain:       solana-devnet
-Tx:          5hX5RtKdaARviLyfrj7d2ey1SFFEhdRhJXG4WZhGnYiKaoX7hjU9VjWvAfAwP2ap2WKCEsvPAfuWCN7mFnvX6tbZ
+SHA256:      5c49de6018a09cbb5fc266780c0bf0a6da55f059e2daede9737e6a370ca36591
+Chain:       solana-mainnet
+Tx:          4aocaLGnYuVBcBfBzURv1Nng7MtVHnoWr8ukwRydVqewqb1pYibT6aaSodGNNyrqWe9btDTaVCAqa8mYziop75md
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -22,6 +22,8 @@ License:     The Unlicense (public domain dedication)
 - Keep the current 24–55 FPS report separate from FPS cap settings. A dry run
   cannot verify gameplay. The roadmap order is Mac 90+ FPS, Windows/Linux, browser.
 - This is Christopher Celaya's personal project: https://github.com/while-basic.
+  Write public pages in Christopher's direct, first-person voice. Avoid reports
+  about "the owner," corporate release language, and repeated disclaimers.
   Original code and docs use the Unlicense; retain third-party credits and rights.
   Keep the upstream standard LICENSE text unchanged for license detection;
   its document metadata lives in docs/LICENSE-NOTES.md.
@@ -45,9 +47,9 @@ was run while preparing these public docs.
 
 ## Completion note
 
-2026-10-12: Published https://github.com/while-basic/bloodborne and verified its
-profile pin. Added agent install/repair/update prompts, Christopher Celaya /
-while-basic attribution, and GitHub-recognized Unlicense terms; credentials stay local.
+2026-10-12: Rewrote the public README, roadmap, contribution guide, and agent
+prompts in Christopher's first-person voice, retaining setup details and limits.
+The personal repo is public and pinned, with GitHub-recognized Unlicense terms.
 Two dry-run tests pass; real local prerequisites pass without launching or writing
 config. History/file screening and ignore checks pass. Gameplay was not retested.
 

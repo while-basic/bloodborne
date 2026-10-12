@@ -1,39 +1,41 @@
 ```text
-Document:    Bloodborne Launcher Contribution Guide
-Version:     v1.1.0
+Document:    Contributing to Bloodborne on Mac
+Version:     v1.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-12
-SHA256:      d1fdfcc4cf409a51b55390a5e24f0c936e5aef7ec4dce14db09145f52578c201
+SHA256:      aed7f88affa3511d008d0923520f46057a87ef251c9b811377566e60a4d9ceb4
 Chain:       solana-mainnet
-Tx:          65Q2Brd2QEvAwyZo7hbkCWWWwii5LzWqoGqszXHhmhKxjjGLuVggcfih24WcufrKn67QEXM3ZvcLnoMZv8aUY8MQ
+Tx:          pq6K76oA4TS8XYTsnZ3DrDZ57tuvvWLBGNPfXcZjM3vo3E11dhZHjbez1gzZbaVSGtnyatWSnfpncRrvY8mdihw
 License:     The Unlicense (public domain dedication)
 ```
 
-# Contributing
+# Want to help?
 
-Bug reports, code contributions, setup feedback, and reproducible measurements
-are welcome. This is Christopher Celaya's personal project at
-[while-basic/bloodborne](https://github.com/while-basic/bloodborne).
-Original project code and docs are released under [the Unlicense](LICENSE).
-Contribute only work you have the right to share, under the same terms.
+If you get this running, I'd like to know what you're using and how it performs.
+If you fix something, send a pull request.
 
-## Report a problem
+My code and docs are under [the Unlicense](LICENSE). Please only contribute work
+you can share under the same terms.
 
-Include your OS/build, chip or CPU, GPU, RAM, Python version, exact emulator
-version, game title ID/update, launch command, patch XML source/hash, and steps
-to reproduce. For performance reports, give the scene, resolution, quality
-settings, run duration, cold/warm cache state, average FPS, and lows.
+## If something breaks
 
-Review logs before sharing: remove personal paths, account details, and other
-private data. Do not upload game data, firmware, keys, saves, emulator bundles,
-or links to unauthorized game downloads. Screenshots and videos are optional
-and must be yours to share.
+Open an issue with:
 
-## Local verification
+- Your computer, CPU/GPU, RAM, OS, and Python version.
+- The exact shadPS4 build, game region/update, and patch file source/hash.
+- The command you ran, what happened, and how to reproduce it.
 
-Python 3.11 or newer is required for the documented setup. No third-party Python
-packages are needed.
+For FPS results, include the scene, resolution, settings, and how long you tested.
+Say whether you'd already visited the area and let its shaders compile.
+Average FPS and lows help more than a single peak.
+
+Keep passwords, tokens, personal details, game files, firmware, keys, and saves
+out of issues. Read through logs before attaching them.
+
+## Before sending a change
+
+Run these locally with Python 3.11 or newer:
 
 ```sh
 python3 -m unittest discover -s tests -v
@@ -42,18 +44,13 @@ python3 play.py --help
 git diff --check
 ```
 
-On a configured Mac, use `python3 play.py --check` to check local prerequisites
-without launching or writing settings. Synthetic tests do not need game files
-or an installed emulator. Neither test type proves gameplay performance.
+The tests don't need a game or emulator install. If your Mac is set up, also run
+`python3 play.py --check`. That checks local files and patches without changing
+settings. Say separately whether you actually launched and played the game.
 
-All checks run locally. Do not create, run, or wait for GitHub Actions workflows.
+I run checks locally. Please don't add GitHub Actions workflows.
 
-## Before a public update
-
-Review the staged file list and Git history for game files, binaries, secrets,
-personal paths, and local agent settings. Ignore rules do not remove files
-already committed or prevent forced adds. Keep runtime material outside the
-source release. Credit external dependencies and retain their license notices.
-
-Record the result of a real launch separately from automated checks. Update
-the tested-build details and roadmap only when supported by evidence.
+Before pushing, check the files you're committing and the Git history for game
+data, binaries, credentials, and private logs. Ignore rules won't remove
+something that's already committed. Keep credits and license notices for
+other people's work.
