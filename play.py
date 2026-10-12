@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.2.0
+# Version:     v1.2.1
 # Author:      Celaya Solutions
 # Contact:     hello@celayasolutions.com
 # Date:        2026-10-12
-# SHA256:      f97e4e8629639c6c961fa5f8bc2f246d6007eca66d847213adcdaab5c233c874
-# Chain:       solana-mainnet
-# Tx:          3wAifi7wrvBfXTAdfjd73krEFRX2gLfUowy6yqFEmCk2wyc3q4mTiCCx2MHfwVDx3ap1i3TJ1UYP2KmNFAM2GpKn
+# SHA256:      a09711f2b47dd469d9953f007d831ed81d41e9a1d03be187bed395b79d015423
+# Chain:       solana-devnet
+# Tx:          5p6AfJGQiymFMefpmYaCFDYuu8GVgKVZAPMNWxnBVhD13Ktvcb4DrnGFg79kM8r7XKiFk7iKvB38xtSHTnL4pVeG
 # License:     All Rights Reserved / Celaya Solutions
 """Launch the local Bloodborne copy with one explicit display profile.
 
 The profile (resolution patch, FPS++ patch, performance patches) is installed into the
 shadPS4 patches folder, so the Qt launcher applies the same profile as this script.
 
-Defaults come from the 2026-10-12 measurements in Central Yharnam (scripted 60 s walk):
-1080p / 60 cap / perf 3 / fullscreen held 57-59 FPS; 1440p topped out near 45-49 FPS
-even with every cheaper-visuals patch on, so 2K at 90 is not reachable on this
-emulator path yet. Use --resolution 1440p --fps 90 for the sharper, slower profile.
+Defaults are 1080p / 60 FPS cap / perf 3 / fullscreen. Current owner-reported
+gameplay is 24-55 FPS on an M5 Max with 128 GB unified memory. The FPS option
+sets a target, not a measured result. See README.md for setup and limitations.
 """
 import argparse
 import copy
@@ -115,7 +114,7 @@ def main():
     parser.add_argument("--resolution", choices=SIZES, default="1080p")
     parser.add_argument("--fps", type=int, choices=(60, 90, 120), default=60)
     parser.add_argument("--perf", type=int, choices=range(len(PERF_LADDER) + 1), default=3,
-                        help="performance patch ladder level (0 = Performance Patch only; 3 = no visible loss)")
+                        help="performance patch ladder level (0 = base patches only; 3 = first three optional effects patches)")
     parser.add_argument("--engine", choices=ENGINES, default="nightly")
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
@@ -134,7 +133,8 @@ def main():
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
-                          "profile_dir": str(PATCH_DIR), "gameplay_verified": True}, indent=2))
+                          "profile_dir": str(PATCH_DIR), "local_files_present": True,
+                          "gameplay_verified": False}, indent=2))
         return 0
     if subprocess.run(["pgrep", "-x", "shadps4"], stdout=subprocess.DEVNULL).returncode == 0:
         parser.error("Close the running emulator before changing profiles.")
