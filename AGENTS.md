@@ -4,9 +4,9 @@ Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      91457aa6fe10631fe0f6cb113062b12c6fa18cd6b8f1ef5b75d851ed7376eb17
+SHA256:      625a0e7eed994216a36dda680f44e96bcb5d7e91bd059a99ce55e85c1572588e
 Chain:       solana-mainnet
-Tx:          4JS5YtxrUvXEzwT6LPbNXigsMb9mDQvXxBBATqSYDKPnQRTnhaVq6C26RDqV2CWh3R5uTTrcpqynWbbmpJVFHSXM
+Tx:          2tVi28cTCb7aiux8NuCdzNZen2w2vHYqWzg2dvJy3MAVPFqYnFKYiujatxvKhVaGiu1evTCQ5HhVCe2qoiVH3iG
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -76,9 +76,11 @@ checks, and performance notes before changing the setup.
 
 2026-10-13: Public docs and the PS4-to-Mac guide are on main in 722e36a.
 Added the optional GPL shadPS4 frame logger, original timing analyzer, and
-capture guide. Seven local tests pass; the instrumented Release build launches
+capture guide, published in 09460f4. Seven local tests pass; the instrumented Release build launches
 and reaches gameplay with copied saves. Steady 90+ FPS is still unverified.
-All measurements and emulator builds remain private under runtime/.
+All measurements and emulator builds remain private under runtime/. The private
+emulator experiment is saved in 30314d3. Patch context whitespace is checked
+by git apply; .gitattributes keeps its required context spaces intact.
 
 <!-- graft:start -->
 ## Graft — repo context graph
