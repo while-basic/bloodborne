@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.5.0
+Version:     v2.6.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      0f1f7451c715fa65e48e705e36044892a59f46de8a45ccc81ede3c82418815cc
+SHA256:      6769ad988c452f9a1cc1e1bb6f8d349b432d357c94c5dcd0d9ef1ff8dd97bc91
 Chain:       solana-mainnet
-Tx:          5JCuyKwQZHQSr7mwnDfFH265L5bWgyzQ4Eo8UthThkntv9fQrZcuXEu7yPUHkkz2KrNCuwXcaZWvqzvnJYEtKg66
+Tx:          oVyWzvZj36eRuTSVMym2QoUUvYPTRXi3LMxbSBE3J2vrtMKzojnN8cLPC3cYFDZVnW5QkZibT2SeqS91kvZemmq
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -265,9 +265,24 @@ private and off. I checked the lamp view at both ends. Background load and
 window focus were not held steady. A later keyboard check did not show
 movement, so controls and combat remain unverified for this build.
 
-The driver did not print its shutdown cache counts. I need a separate light
-probe to count cache hits and time state creation before drawing conclusions
-about why this change did or did not help. My original saves and settings
+The driver did not print its shutdown cache counts. I added an optional
+probe that reports during play, then made two separate diagnostic runs.
+The updated code passed 49 checks and 20,000 threaded lookups.
+
+- Cache off: 475,613 state creations took 857.51 ms across 59.05 seconds.
+  That is about 1.45% of the wall-clock time in this scene.
+- Cache on: all 338,954 lookups found a match. No new state was made during
+  those 59.53 seconds. Lookups took 73.03 ms, or about 0.12% of the time.
+
+The cache does reuse states. But the cost it removes was small in this test.
+These are summed CPU call times, not GPU times or proof of an FPS gain.
+Probe overhead was not measured. The diagnostic runs averaged 30.63 and
+21.89 FPS; the second had a 5.05-second stall. Other work was still running
+on my Mac, and I have not pinned down the cause of that stall.
+
+After clicking inside the game window, I checked walking and camera movement
+with the cache off and on. Both worked after the timed captures. Combat,
+sound, and game speed still need checks. My original saves and settings
 remain unchanged. The 90 FPS hunt is still on.
 
 ## Other paths I checked

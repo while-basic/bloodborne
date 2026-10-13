@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.5.0
+Version:     v2.6.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      bc7301e7b874f92c93e7cb36be08cafa9c1e0ef51fc912357a8fe150936b9618
+SHA256:      4adef1371c7e8840f41c7190e26905cdf8c9284e1fbfc1f812b72b1a3e60ef1d
 Chain:       solana-mainnet
-Tx:          4VL16bR59G1fUiRqapkzCPtQV4HcsCVqboCKiwJsvheMBmE9inkPbiaUZiguDu986Zyq3e64cZ2r6VK3oR4PEP3p
+Tx:          3KQosXsTiBUFfDTMjsEDQbQREGBMjuMot1Wxokiu35grgnVD6jfE4AbngmLZvSpi6rNFXtDfnKeumvsYSYSNi6jz
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,9 +74,9 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Recorded repeated driver-cache and effects tests. Neither cache
-showed a repeatable gain; both stay private and off. All 16 original saves
-and my config are unchanged. My normal profile stays intact; 90+ FPS is open.
+2026-10-13: Published repeated driver-cache and effects tests, then measured
+depth-state creation at 1.45% of wall time in one scene. Cache reuse works,
+but no FPS gain is proved. Original saves and settings are intact; 90+ FPS is open.
 
 ## Tests still open
 
@@ -89,10 +89,16 @@ default. It passed 36 checks and 20,000 threaded lookups with memory checks,
 and the Intel driver builds. Off/on/off/on lamp captures averaged
 29.55/55.54/50.15/42.16 FPS. No gain is established. All four used matching
 driver, executable, game-patch, and starting-config hashes. Lamp endpoints
-were checked; movement, combat, sound, and game speed remain unverified.
-Keyboard movement and camera input did not visibly work after the last
-capture. Resolve focus/input before a route test. Shutdown cache counts did
-not appear; add a separate low-cost hit/creation-time probe before more trials.
+were checked. Initial keyboard checks failed to move the character.
+
+Private commit `d387faf` adds an optional once-per-second depth-state probe.
+It builds and passes 49 checks plus 20,000 threaded lookups. Creation took
+1.45% of wall time in the control; the enabled run had 100% hits and 0.12%
+lookup time. Keep the cache private and off; this is a small measured cost.
+Diagnostic FPS averaged 30.63/21.89, with a 5.05-second stall in the second
+run. Probe cost and background load were not controlled. Walking and camera
+checks passed in both runs after clicking inside the game surface. Combat,
+sound, and game speed remain open. Both diagnostic apps are closed.
 
 Keep the optional buffer patch off by default. My 16 KiB repeats had stalls;
 background load was not held constant. Immediate display mode and vblank 240
@@ -101,6 +107,8 @@ including combat, sound, game speed, and picture quality.
 
 Private source commit `2e603c5` saves the renderer and thread-priority probes;
 leave them off during comparisons. Draw command recording is the next lead.
+Mesa already skips replay-queue copies for one-time command buffers, which
+the renderer uses; do not add a second version of that optimization.
 ThinLTO stalled at startup. A manually moved trial is invalid and its copied
 save stays private. Raw captures and exact test state stay in ignored runtime/.
 All 16 original saves and my original config were checked unchanged.
