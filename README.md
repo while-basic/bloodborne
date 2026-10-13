@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v3.0.0
+Version:     v3.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      37e76852b9c1e8478c0645cafd40ad6c58dede17ba526ac80015880833d2ab58
+SHA256:      72ed4f01daf2b1e64e33b8d74feaac2320fee4e8c22b1f96137fde06f49e27f3
 Chain:       solana-mainnet
-Tx:          4HHUiTAmpm6SbUH2doyvnc6WcQm1JhRMabNR9jbpwhQdN1otdDhN7suXHePRTpbzWTcu4qwnRzptCGXW3JV9caWa
+Tx:          5SVaKyoYgfZ4H49N2VhYWH4nUYTmEwGz8D1Hs6nDuQxieUNpaH7yLPEaosrrLLppViekSKvDRUKQYMCjq7SshECq
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -49,6 +49,7 @@ See [my performance notes](PERFORMANCE.md) for the test limits.
 - [x] Disable Facegen by default to avoid the spiky-character bug.
 - [x] Add config backups, private session logs, and a light CPU/GPU recorder.
 - [x] Share steps and prompts for Codex and Claude.
+- [x] Add an optional frame logger and analyzer for local emulator builds.
 - [ ] Measure the same route across several runs and reach **90+ FPS on Mac**.
 - [ ] Bring this launcher to Windows and Linux.
 - [ ] Explore a browser version. Local play or streaming? Still an open idea.
@@ -224,4 +225,5 @@ work made this possible. Bloodborne belongs to its rights holders.
 
 My original code and docs use [the Unlicense](LICENSE). Fork away.
 I do not include game data, firmware, keys, saves, or emulator bundles.
-Want to help hunt frames? [Here's how to contribute](CONTRIBUTING.md).
+Want to help hunt frames? [Here's how to contribute](CONTRIBUTING.md),
+including [how I capture frame times](docs/FRAME-CAPTURE.md).

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.0.0
+Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      a5dad6b47102849794d2d1ea2928efbe2e808f889cbaef51b2a2eb7de559d4ee
+SHA256:      91457aa6fe10631fe0f6cb113062b12c6fa18cd6b8f1ef5b75d851ed7376eb17
 Chain:       solana-mainnet
-Tx:          KrWxC2ZJK8XjobzVhwo7FH6E6zmb2ZE2BVBhpauvsLpj17L9HcfDZwMj6B7BrFmcGfPiLrj3D18PZ9RMjtyYZpn
+Tx:          4JS5YtxrUvXEzwT6LPbNXigsMb9mDQvXxBBATqSYDKPnQRTnhaVq6C26RDqV2CWh3R5uTTrcpqynWbbmpJVFHSXM
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,9 +74,11 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Reworked public docs in my voice, added the PS4-to-Mac tutorial and
-Claude entry point, and separated firmware claims, play reports, and FPS goals.
-The initial main push matched the remote. The working 1080p profile is preserved.
+2026-10-13: Public docs and the PS4-to-Mac guide are on main in 722e36a.
+Added the optional GPL shadPS4 frame logger, original timing analyzer, and
+capture guide. Seven local tests pass; the instrumented Release build launches
+and reaches gameplay with copied saves. Steady 90+ FPS is still unverified.
+All measurements and emulator builds remain private under runtime/.
 
 <!-- graft:start -->
 ## Graft — repo context graph

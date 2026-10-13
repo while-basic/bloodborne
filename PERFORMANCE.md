@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.0.0
+Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      a59fa8a5cc7f45b8deceb734d3229852109203ba5b322a5f180217507cb02666
+SHA256:      7edefa0034f6b353bd690ae8c1da9b2febf909f3987e17b403355567d7d5ad6c
 Chain:       solana-mainnet
-Tx:          2bmYRXgCn9hVFDTt4fKkwSr87y1xVFVY5auCzJNeqDrRGEk66AG23PWgHdJV7doiabGWqqVUt6RiAV67c2KiKz8E
+Tx:          3Z9kNs4bwsDEJ7wziRhnnQVuFpq2vE5nQxZeUitBwTJRqQLuu1jtVA7n6xqrJr8koacyQYgkGrToZsyHQMx7S8J7
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -114,6 +114,12 @@ Some Apple stack-export tools also failed on this Rosetta process. Raw traces
 can include private process data, so I keep them out of Git.
 
 ## The next useful test
+
+I now have an [optional frame capture patch and analyzer](docs/FRAME-CAPTURE.md)
+for a local emulator build. It captures real presentation intervals, while
+the earlier recorder still measures CPU/GPU activity. Startup samples validate
+the data path; they do not prove a gameplay speedup. Logger overhead still
+needs a matching-scene comparison against an unmodified build.
 
 1. Keep the working engine, config, patches, and saves backed up.
 2. Choose the same busy location, camera, route, and warm shader cache.
