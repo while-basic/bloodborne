@@ -1,117 +1,133 @@
 ```text
-Document:    Agent Installation Prompts
-Version:     v1.1.0
+Document:    My Codex and Claude Setup Prompts
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-12
-SHA256:      084ea9c5650457ad5d332127e4793776ae231f0a5a3d90ecef1579eb4fc71f59
+Date:        2026-10-13
+SHA256:      c207f982c0bb249d27ee1d036639868485015702a46ae630941da71d716f2c0f
 Chain:       solana-mainnet
-Tx:          48fDDdaswWPkmhh8giiiNFDq5zdJAEwsz3Ld7ebXv3ZTLNp38EqM4KbGdqtdvSqTut1k35cDcBcJH5LsWQ8u3fVb
+Tx:          2Wggk1WB5cUxMfVjS9uSp8WQoJR9DoSk4CPZbgKbcsZQo8R5A9UBSAG1widzuBGckNNEsMidDCU2prKbAqsnjntE
 License:     The Unlicense (public domain dedication)
 ```
 
-# Let your agent set it up
+# Bring an agent to the hunt
 
-If you'd rather have your agent do the installation, copy the first prompt below.
-It needs terminal access to your Mac. You'll still need to supply your own game
-files and handle any steps that need your input.
+I used Codex and Claude to help with Mac commands and PS4 steps. Pick either
+agent with local terminal access, open this repo, and paste a prompt below.
+You still handle the console, cables, and any checks the agent cannot see.
+Keep passwords, console keys, saves, and game files out of chat and issues.
 
-I've included prompts for fixing an existing setup and checking performance too.
-These are for the current Mac launcher and **CUSA00900 / 01.09**.
-Windows, Linux, and the browser come later.
-
-## Install it
+## Start with my disc and PS4
 
 ```text
-Set up https://github.com/while-basic/bloodborne on my Mac and help me launch
-my own legally obtained copy of Bloodborne. Read the README and AGENTS.md
-first, then do the setup.
+Help me go from my own Bloodborne disc or digital copy to playing on my Mac
+using https://github.com/while-basic/bloodborne. Read README.md, AGENTS.md,
+CLAUDE.md, and docs/PS4-TO-MAC.md. Walk me through one short step at a time.
+Ask what each screen shows before moving past a console step you cannot see.
 
-Check my Mac, Python, and any existing shadPS4 install. Clone the repo if
-needed, keeping my existing files and local changes. Install missing
-Python 3.11+ and shadPS4 Qt Launcher from official sources or a trusted
-package manager. Follow upstream Rosetta and emulator instructions without
-bypassing OS security. If I'm not on macOS, tell me this wrapper isn't ready
-for my platform.
+Start by asking what I have: exact PS4 firmware, Mac chip/RAM/macOS, disc or
+digital copy and game region/update, controller, free internal space, backups,
+USB drive, Ethernet cable, USB-C Ethernet adapter, and any existing homebrew.
+Ask which drives must stay untouched. Never assume a USB drive is empty.
 
-Use Qt Launcher to install the pre-release engine. Open it once and close
-it to create its config. Check the paths and config format against play.py;
-don't guess if they differ.
+Ask permission before a Mac performance test. Explain the duration and load.
+Check specs and current shadPS4 requirements first; if I approve a load test,
+use a short local test. A synthetic result cannot guarantee game performance.
+Do not upload hardware reports. Let me skip testing and continue the guide.
 
-Ask where my extracted CUSA00900 / 01.09 game folder is. Check its metadata,
-or ask me to verify the region and version if you can't. If I only have a
-disc, archive, PKG, or ISO, explain the upstream dump/import step I need.
-Don't download game data, firmware, keys, updates, or DLC for me.
+Before putting the PS4 online, help me check Notifications / Downloads for a
+queued SYSTEM SOFTWARE update. Identify it and explain its removal before I
+delete it. Leave game updates, games, and saves alone. Help me turn off auto
+system downloads. Do not update, downgrade, reset, or initialize my console.
 
-Check disk space, then copy the complete game folder to the path in the
-README. Keep my original copy. Reuse an existing matching install rather
-than overwriting it. Download Bloodborne.xml from the exact upstream URL
-in the README. Record the emulator version and patch file hash.
+Verify my exact firmware against current primary project guides. Link the
+chosen method, supported firmware and payload, required gear, and recovery
+steps. Do not assume all 13.xx versions work or confuse a browser vulnerability
+with a complete jailbreak. Ethernet on 11.02 does not mean PPPwn supports it.
+Avoid any route that needs a full-system restore or drive erase by default.
 
-Run the local tests and python3 play.py --check. Fix or explain any missing
-prerequisites before going further. Back up my config, existing generated
-patch profile, and saves before launch; tell me where the backups are.
-The launcher's automatic backup covers config.json only.
+Choose USB or Ethernet for each job based on my gear. Explain the difference
+between loading the jailbreak, installing a homebrew PKG, and dumping a game.
+For direct Ethernet, identify the actual adapter and record existing network
+settings. Use a free local subnet and guide me through both ends. Do not guess
+interface names, enable Internet Sharing, or change unrelated network services.
 
-If shadPS4 is running, ask me to close it normally. Launch with the default
-1080p / 60 cap / perf 3 settings. Check the game window and gameplay, or
-ask me to confirm them if you can't see them. A successful --check or a
-running process isn't proof that the game works.
+Confirm GoldHEN on the console before installing homebrew from its maintainer.
+Verify the homebrew app opens; a transferred PKG is not an installed app.
+Follow the current upstream guide to dump my own base game, matching 01.09
+update, and required modules. Copy to an approved folder and verify the copy.
+A plain FTP copy of encrypted installed files may not be a usable dump.
 
-Tell me what you installed, what changed, and whether the game actually
-ran. Keep game files, credentials, saves, and private logs local. Don't
-push or upload anything, and don't use GitHub Actions.
+Then follow the Mac setup prompt below. Keep my original data and a rollback
+path. Do not download games, publish my files, or use GitHub Actions.
 ```
 
-## Fix my setup
+## I already have my extracted game
 
 ```text
-Help me fix my existing https://github.com/while-basic/bloodborne setup.
-Read the repo instructions and check what I already have before changing
-anything.
+Set up https://github.com/while-basic/bloodborne on my Mac. Read its README,
+AGENTS.md, and CLAUDE.md first. Check what is installed and preserve my work.
 
-Check Python, shadPS4, the expected paths and config format, my complete
-CUSA00900 / 01.09 game folder, and the Bloodborne.xml patches. Run the local
-tests and python3 play.py --check. Use local logs to find the actual problem.
+Ask for my Mac specs, game folder, game region/update, available space, and
+drives to avoid. Ask permission before running a performance/load test and
+explain what it can and cannot tell me. Use official shadPS4 requirements.
 
-Back up settings, the generated patch profile, and saves before a repair.
-Keep my original game files and other patch profiles. Don't start by
-reinstalling everything or deleting caches and saves. If code needs to
-change, use a separate branch/worktree.
+Use Python 3.11+, shadPS4 Qt Launcher, and the upstream Rosetta setup. Install
+the pre-release engine, then open and close it to create its config. Check
+paths and config format against play.py. Don't bypass macOS security prompts.
 
-Make the smallest fix that addresses the problem. Check it again and
-launch after any running emulator has been closed normally. Verify the
-game window or ask me to confirm what happens. Tell me what worked and
-what still needs attention.
+Verify CUSA00900 / 01.09 from game metadata. A renamed folder is not proof.
+If I have a disc, PKG, or archive, walk me through the upstream dump/import
+step first. Reuse a matching complete install; keep the original backup.
+Get Bloodborne.xml from the exact upstream URL in the README. Record the
+emulator build and patch hash. Do not fetch game data, keys, or firmware.
 
-Don't download game data, publish changes, upload private logs, or use
-GitHub Actions.
+Run the local checks in CONTRIBUTING.md and python3 play.py --check.
+Back up config, the existing generated patch profile, and saves before launch.
+Tell me where each backup is. The launcher's backup covers config only.
+
+After any running emulator closes normally, launch at 1080p / 60 cap / perf 3.
+Verify the game window, then controls, sound, and actual gameplay. Ask me to
+confirm what you cannot observe. Report setup checks and gameplay separately.
+Keep private files local. Do not push, upload, or use GitHub Actions.
 ```
 
-## Update it and check FPS
+## Help, the hunt broke
 
 ```text
-Help me update and measure my https://github.com/while-basic/bloodborne
-setup. Read the README and roadmap first. Keep my local changes and back
-up settings, patches, and saves. Keep a way to return to my working emulator.
+Help repair my existing Bloodborne launcher setup. Read the repo instructions.
+Inspect my current install, local changes, and logs before changing anything.
+Check the emulator, game version, config format, patch file, and --check output.
 
-Record my computer specs, OS, drivers, power mode, display refresh rate,
-game region/update, repo commit, emulator build/hash, patch XML hash,
-resolution, FPS cap, and enabled patches. Update from official sources.
+Back up settings, the generated patch profile, and saves. Keep the original
+game and working emulator. Do not start by deleting caches or reinstalling
+everything. Use a separate worktree if code changes are needed.
 
-Use the same scene and route for several runs. Test first-visit shader
-stutter separately from runs where shaders are already cached. Change one
-setting at a time. Record average FPS, lows/frame times, stutter, crashes,
-and any visual changes. Check controls, audio, game speed, and save/load too.
-
-The README says Christopher is getting 24–55 FPS on an M5 Max with 128 GB
-RAM. Measure what my machine does. A higher cap or a brief peak doesn't
-prove sustained 90+ FPS. If you can't measure gameplay, give me the steps
-to measure it and leave the results blank.
-
-Keep game files, saves, and private logs local. Don't push changes, upload
-anything, or use GitHub Actions.
+Fix the cause, run the local checks, and verify a real launch. Ask me what I
+see if you cannot view gameplay. Keep the report short and name any blocker.
+Do not download games, upload logs, publish changes, or use GitHub Actions.
 ```
 
-If your agent gets stuck, have it tell you exactly what's missing.
-Don't put your passwords, tokens, console keys, or game files in an issue.
+## Help me hunt frames
+
+```text
+Help measure and improve my Bloodborne setup. Read PERFORMANCE.md and the
+roadmap. Ask permission for performance tests and agree on the resolution,
+picture quality, test length, and scene before changing settings.
+
+Keep a working emulator and backups of config, patches, and saves. Record
+hardware, OS, display refresh, power mode, game version, repo and engine
+commits, engine/patch hashes, resolution, FPS cap, vblank, and enabled patches.
+
+Use the same scene, camera, route, and warm shader cache. Change one thing
+at a time. Repeat runs and record FPS/frame times, stutter, crashes, and visual
+changes. Check game speed, controls, sound, and save/load. Separate menus,
+loading, deaths, and first-visit shader work from the gameplay comparison.
+
+profile_runtime.py reads CPU/GPU activity; it does not measure FPS or see the
+scene. Do not run heavy Metal/Instruments tracing during combat. Don't infer
+FPS from CPU use. A higher cap, static scene, or short peak cannot prove steady
+90+ FPS. Keep unmeasured results blank and roll back failed experiments.
+
+Keep raw evidence local. Do not upload, push, or use GitHub Actions.
+```

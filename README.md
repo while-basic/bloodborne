@@ -1,105 +1,140 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v2.4.0
+Version:     v3.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-12
-SHA256:      495fbb74e84e86123355c54efae6221f7e2f4925d92c8f4713ad97807675e83a
+Date:        2026-10-13
+SHA256:      37e76852b9c1e8478c0645cafd40ad6c58dede17ba526ac80015880833d2ab58
 Chain:       solana-mainnet
-Tx:          23maDM8uzv3tGnSAoqywFPEdSYswicLWVMsEzzXiuiMaPVWXdLNUmjD9YFQtkVAGV4wKeGyHidE1dQxbRUF4fthe
+Tx:          4HHUiTAmpm6SbUH2doyvnc6WcQm1JhRMabNR9jbpwhQdN1otdDhN7suXHePRTpbzWTcu4qwnRzptCGXW3JV9caWa
 License:     The Unlicense (public domain dedication)
 ```
 
-# Bloodborne on Mac
+# Bloodborne on Mac 🩸
 
-I'm running Bloodborne on an **M5 Max with 128 GB of RAM**. Right now I'm getting
-around **24–55 FPS**. I want to get that to **90+ FPS**, then work on Windows and
-Linux, then see what I can do in a web browser.
+I put Bloodborne on my Mac. The hunt got a little out of hand.
 
-I put this launcher together so other people can set up the same thing. It uses
-[shadPS4](https://github.com/shadps4-emu/shadPS4) to run the game and applies the
-resolution, FPS, and performance patches before launching.
+More than **1 million people** have seen it running at **50+ FPS**. My next boss
+is **90+ FPS**. The internet has questions. So do the villagers.
 
-**Want your agent to do the setup? [Copy one of these prompts.](docs/AGENT-INSTALL.md)**
+I'm [Christopher](https://github.com/while-basic). This is my small launcher for
+[shadPS4](https://github.com/shadps4-emu/shadPS4), plus the steps I took to get
+from my own PS4 disc to playing on my Mac. The shadPS4 team built the emulator.
+I built this setup around it, with help from Codex and Claude.
 
-This is a personal project. I'm [Christopher Celaya / while-basic](https://github.com/while-basic).
-My code and docs are open source under [the Unlicense](LICENSE). Use them, change
-them, fork them. I claim no ownership of Bloodborne, shadPS4, or anyone else's work.
+**Start here: [the guided PS4-to-Mac tutorial](docs/PS4-TO-MAC.md).**
+Already have your game files? Jump to [Mac setup](#mac-setup).
+Want an agent to help? [Copy a starter prompt](docs/AGENT-INSTALL.md).
 
-## What you'll need
+## Where I'm at
 
-- A Mac with Python 3.11 or newer, shadPS4 Qt Launcher, and Rosetta for the
-  x86_64 emulator.
-- Your own extracted Bloodborne files: **CUSA00900, update 01.09**.
-- The `Bloodborne.xml` patch file linked in the setup below.
+The shared footage shows 50+ FPS. My earlier play sessions ranged from about
+24–55 FPS, with some quiet spots near 60. Busy fights can dip. I have **not**
+reached steady 90+ FPS yet. A million views do not add a million frames.
 
-If you own a PS4 and a disc or digital copy, start with the
-[shadPS4 instructions](https://github.com/shadps4-emu/shadPS4) for dumping and
-setting up your game. The launcher needs the extracted game folder; it can't
-read a PS4 disc in a Mac drive or launch a PKG, ISO, or ZIP directly.
+My current starting point is **1080p, a 60 FPS cap, perf 3, and borderless
+fullscreen**. I tried 900p during a boss fight, found it much worse, and went
+back to 1080p. The restored run felt very good; I did not measure new FPS for it.
+See [my performance notes](PERFORMANCE.md) for the test limits.
 
-If you already downloaded your files, make sure you have the right to use that
-copy. I don't include game files, updates, DLC, firmware, keys, saves, or game
-download links here.
+## Done, next, and a slightly wild idea
 
-## My setup
+- [x] Start with my own Bloodborne disc and a PS4.
+- [x] Get homebrew running on my PS4 11.02.
+- [x] Use a USB-C Ethernet adapter and cable for my local setup and transfers.
+- [x] Back up my game and get CUSA00900 / update 01.09 running on my Mac.
+- [x] Add a one-command launcher and a check that changes no settings.
+- [x] Add resolution, FPS, and visual-effect patches.
+- [x] Turn on the shader pipeline cache and stop log writes blocking game threads.
+- [x] Disable Facegen by default to avoid the spiky-character bug.
+- [x] Add config backups, private session logs, and a light CPU/GPU recorder.
+- [x] Share steps and prompts for Codex and Claude.
+- [ ] Measure the same route across several runs and reach **90+ FPS on Mac**.
+- [ ] Bring this launcher to Windows and Linux.
+- [ ] Explore a browser version. Local play or streaming? Still an open idea.
 
-| Part | What I'm using |
+The longer plan is in [my roadmap](docs/ROADMAP.md). Checked boxes describe what
+I've done; they are not a promise that every Mac or PS4 will work the same way.
+
+## Tutorial: let Codex or Claude walk with you
+
+My path was: **disc → PS4 homebrew → my game backup → shadPS4 → this launcher**.
+An agent handled the Mac commands and talked me through the PS4 steps.
+I still pressed the controller buttons and checked what the PS4 showed.
+
+1. **Tell the agent what you have.** Mac model, memory, PS4 firmware, disc or
+   digital copy, controller, USB drive, Ethernet cable, and any USB-C adapter.
+2. **Ask before testing the Mac.** The agent should request permission for a
+   local performance test. It should explain the load and length first.
+   Reading specs is a first check; playing the game is the real test.
+3. **Keep the PS4 firmware where it is.** Check for a queued system update in
+   Notifications / Downloads. Identify that exact item before deleting it.
+   Do not delete game updates or saves. Then turn off automatic system downloads.
+4. **Pick the right homebrew path.** Check the exact firmware against the
+   chosen tool's current guide. “All 13.xx and below” is too broad.
+5. **Choose USB or Ethernet for each job.** A USB drive can carry a homebrew
+   package. Ethernet can host a browser loader and move files. An Ethernet
+   cable alone does not make every firmware support the same jailbreak.
+6. **Install homebrew, back up your own game, and set up the Mac.** Follow the
+   [full walkthrough](docs/PS4-TO-MAC.md), with checks at each step.
+
+I used **PS4 11.02 with a CSSFontFace/Lapse browser loader**. Other published
+routes cover specific versions through **13.00**, but that does not verify
+every 13.xx release. I checked the linked project guides on October 13, 2026.
+The [firmware table and sources](docs/PS4-TO-MAC.md#3-pick-a-firmware-path) show
+the limits. Stay on your current firmware while you check.
+
+## My Mac
+
+| Part | My setup |
 | --- | --- |
-| Mac | MacBook Pro, Mac17,6 |
-| Chip | Apple M5 Max |
-| CPU | 18 cores: 6 Super + 12 Performance |
-| GPU | 40 cores |
-| Memory | 128 GB unified memory |
-| macOS | 27.0, build 26A5406e |
-| Python | 3.11.9 |
-| Emulator | shadPS4 pre-release, x86_64 through Rosetta 2 |
-| Graphics | Vulkan through KosmicKrisp / Metal |
+| Mac | MacBook Pro with Apple M5 Max |
+| CPU / GPU | 18 CPU cores / 40 GPU cores |
+| Memory | 128 GB |
+| macOS | 27.0 |
+| Emulator | shadPS4 pre-release, x86-64 through Rosetta |
+| Graphics | Vulkan through KosmicKrisp and Metal |
 | Game | CUSA00900, update 01.09 |
-| FPS I'm seeing | 24–55 |
 
-These are my specs, not minimum requirements. I haven't tested other Macs yet.
-I also haven't written up a repeatable benchmark for that FPS range. That's
-on [the roadmap](docs/ROADMAP.md).
+These are my specs, not minimum requirements. Check the
+[current shadPS4 Mac requirements](https://github.com/shadps4-emu/shadPS4/blob/main/documents/building-macos.md)
+before you buy hardware. More than 60 visible frames also needs a display
+running above 60 Hz.
 
-The launcher starts at **1080p, a 60 FPS cap, perf 3, and borderless fullscreen**.
-Those are the defaults, not a record of every setting used for the range above.
+## Mac setup
 
-## Set it up
+I use **Python 3.11+**, the
+[shadPS4 Qt Launcher](https://github.com/shadps4-emu/shadPS4-qtlauncher), Rosetta,
+and my own complete, extracted **CUSA00900 / 01.09** game folder.
+A PS4 disc in a Mac drive will not work. This script cannot launch a PKG, ZIP,
+or ISO directly. Use [shadPS4's setup guides](https://shadps4.net/) for dumping
+and importing your own files.
 
-1. Install Python 3.11+ and
-   [shadPS4 Qt Launcher](https://github.com/shadps4-emu/shadPS4-qtlauncher).
-   Install Rosetta when macOS asks for it.
-2. Install the pre-release engine through Qt Launcher. Open the emulator once,
-   then close it so its config is saved. The script looks for:
+1. Install the pre-release engine through Qt Launcher. Open it once and close
+   it to create its settings. This wrapper expects these paths:
 
    ```text
    ~/Library/Application Support/shadPS4QtLauncher/versions/Pre-release/shadps4
    ~/Library/Application Support/shadPS4/config.json
    ```
 
-   If your install uses different paths or a different config format, the script
-   will need an update.
-3. Clone this repo:
+2. Clone this repo:
 
    ```sh
    git clone https://github.com/while-basic/bloodborne.git
    cd bloodborne
    ```
 
-4. Put your complete, extracted **CUSA00900 / 01.09** game folder here. Install
-   the matching update using the upstream instructions first. Renaming a folder
-   from another region won't make its patches compatible.
+3. Put the complete extracted game here, with the matching update already
+   installed. Keep your original backup. Changing a folder name does not
+   change the game's region.
 
    ```text
-   runtime/
-     games/
-       CUSA00900/
-         eboot.bin
-         ...the rest of your game files...
+   runtime/games/CUSA00900/eboot.bin
+   runtime/games/CUSA00900/...the rest of the game...
    ```
 
-5. Download the patch file from the
+4. Get the patches from the
    [shadPS4 patch collection](https://github.com/shadps4-emu/ps4_cheats/blob/main/PATCHES/Bloodborne.xml):
 
    ```sh
@@ -109,135 +144,84 @@ Those are the defaults, not a record of every setting used for the range above.
      --output runtime/downloads/Bloodborne.xml
    ```
 
-   The patch file can change upstream. The launcher checks patch names and
-   versions, but it doesn't verify your game dump.
-6. Close shadPS4, back up your saves, and check the setup:
+5. Close shadPS4. Back up your saves and any existing generated patch profile.
+   Then check the local files without launching or changing settings:
 
    ```sh
    python3 play.py --check
    ```
 
-   This checks local files and patches without launching or changing settings.
-   You'll still need to launch the game to know it works.
-7. Run it:
+6. Launch:
 
    ```sh
    python3 play.py
    ```
 
-   You can also double-click `Play Bloodborne.command`. If you downloaded a ZIP
-   and it won't open, run `chmod +x "Play Bloodborne.command"`.
+   Or double-click `Play Bloodborne.command`. For a ZIP download, you may need
+   `chmod +x "Play Bloodborne.command"` first. Confirm the title screen, then
+   check controls, sound, and actual play. A passing file check is only step one.
 
-## Try different settings
+## Turn the knobs
 
 ```sh
 python3 play.py --help
 python3 play.py --windowed
-python3 play.py --resolution 1440p --fps 90 --perf 7
+python3 play.py --fps 90 --check
+python3 play.py --resolution 1440p --fps 90 --perf 4
 python3 play.py --extra "Disable AA" --check
 python3 play.py --no-log
-python3 play.py --resolution 720p             # 720p and 900p are there for testing, not for looks
-python3 play.py --perf 4                      # shadows off: a few more FPS in crowds
-python3 play.py --keep-facegen                # put Facegen back (see below)
-python3 play.py --engine nightly-app --fullscreen-mode exclusive   # Game Mode experiment, read below first
+python3 play.py --keep-facegen
 ```
 
-You can choose 1080p, 1440p, or 4k, with a 60, 90, or 120 FPS cap. Setting the
-cap to 90 doesn't make the game run at 90. I haven't tested every combination.
+I support 720p, 900p, 1080p, 1440p, and 4K, with 60, 90, or 120 FPS caps.
+These are choices to test. **A 90 FPS cap does not create 90 FPS.**
+Keep 720p and 900p as experiments; my current baseline is 1080p.
 
-The performance levels build on each other. Level 0 keeps the base performance,
-intro-skip, and FPS patches. Higher levels add these changes:
-
-| Level | What it changes |
+| Perf level | Added change |
 | --- | --- |
-| 1 | Disables motion blur |
-| 2 | Disables chromatic aberration |
-| 3 — default | Lowers specific renders |
-| 4 | Disables dynamic light shadows |
-| 5 | Disables SSAO |
-| 6 | Disables depth of field |
-| 7 | Disables bloom |
+| 0 | Base performance patch, intro skip, FPS patch, and Facegen fix |
+| 1 | No motion blur |
+| 2 | No chromatic aberration |
+| 3 — default | Lower some extra renders |
+| 4 | No dynamic light shadows |
+| 5 | No SSAO |
+| 6 | No depth of field |
+| 7 | No bloom |
 
-You can repeat `--extra` for more patches. Use their exact names from the XML
-and check that they work together.
+Each level includes the ones above it. Higher levels change the picture.
+`--keep-facegen` removes the Facegen fix at any level. Repeat `--extra` to add
+named XML patches, and check for conflicts.
 
-For `--engine release`, put your separate emulator install at
+`--engine release` uses a separate install at
 `runtime/Bloodborne Emulator.app/Contents/MacOS/shadps4`.
-The script also tries that path if it can't find the nightly. It doesn't
-download or update the emulator for you.
+`--engine nightly-app` expects a separately prepared `Bloodborne Nightly.app`
+at the same level. That game-category app bundle can enable macOS Game Mode
+in exclusive fullscreen. The launcher does not create it, and I have no
+measured Game Mode speedup to share.
 
-## Backups and settings
+## Backups and the way home
 
-The launcher backs up `config.json` to `runtime/config-backups/` before changing
-the display settings, FPS counter, extra direct memory, pipeline cache, and logging.
+I save a copy of `config.json` in `runtime/config-backups/` before changing it.
+The launcher writes patches to
+`~/Library/Application Support/shadPS4/patches/bloodborne-profile/` and keeps
+session logs in `runtime/sessions/`. The profile also stays active in Qt Launcher.
 
-It writes the selected patches to:
+To undo a profile change, close shadPS4, restore your chosen config backup,
+and restore your prior `bloodborne-profile` folder, or remove that folder if
+there was none before. **Automatic backups cover config only.** Save files
+and older patch profiles need their own backup.
 
-```text
-~/Library/Application Support/shadPS4/patches/bloodborne-profile/
-```
+I've seen shader stutter, graphics crashes, and input or loading freezes.
+Keep a working emulator build and change one thing at a time. See
+[troubleshooting prompts](docs/AGENT-INSTALL.md) and [performance notes](PERFORMANCE.md).
 
-That profile stays there, so Qt Launcher can use it later too. Check for conflicts
-if you have other Bloodborne patches enabled. Session logs go in
-`runtime/sessions/`.
+## Credits and sharing
 
-To undo a change, close shadPS4, restore the config backup you want, and remove
-only the `bloodborne-profile` folder. **The script backs up config, not saves
-or an older copy of that patch folder.** Back those up separately.
+Thanks to [shadPS4](https://github.com/shadps4-emu/shadPS4),
+[the patch authors](https://github.com/shadps4-emu/ps4_cheats),
+[GoldHEN](https://github.com/GoldHEN/GoldHEN), and the homebrew developers whose
+work made this possible. Bloodborne belongs to its rights holders.
 
-## Things that still need work
-
-This launcher currently uses Mac paths and the CUSA00900 / 01.09 game profile.
-Windows, Linux, other game regions, and browsers still need work.
-
-Shader compilation can cause stutter when you enter an area. I've also seen a
-graphics crash with the 0.19.0 emulator and occasional input or loading freezes.
-Restarting the game may help.
-
-Some earlier short test runs showed higher peaks than 24–55 FPS. I want to test
-the same route on a fixed emulator build before putting out a proper benchmark.
-For now, I'm using the range I'm seeing while playing.
-
-### What I measured on October 12
-
-I played with the DualShock while a script read the FPS counter off the screen every second or two.
-
-| Profile | Where | median | slowest 10% | min | max |
-| --- | --- | ---: | ---: | ---: | ---: |
-| default (1080p, 60 cap, perf 3) | carriage fight, gate | 47 | 43 | 37 | 60 |
-| default at 720p | bonfire mob | 53 | 48 | 37 | 60 |
-| perf 7 + Model LOD 1 + 1080p Light Grid | standing at the gate | 51 | 43 | 43 | 49 |
-| default | crowded fight until I died | 48 | 41 | 23 | 60 |
-
-Those earlier route tests suggested a CPU limit: reducing the pixel count helped
-only a little, and the game and graphics-command threads both did substantial
-work. CPU/GPU utilization alone does not establish the cause of every slowdown,
-or a guaranteed FPS floor in other scenes.
-
-Later on October 12, a 900p boss attempt felt much worse than 1080p. I restored
-1080p with the 60 FPS target and perf 3, and the next run felt very good. I did
-not collect a new FPS number for that comparison. The working command, larger
-FPS counter setting, and next-session notes are in [PERFORMANCE.md](PERFORMANCE.md).
-
-Two other things from that session:
-
-- The spiky-geometry glitch (characters exploding into shapes) is the known Facegen bug.
-  `Disable Facegen` is now part of the default profile; `--keep-facegen` restores it.
-- macOS Game Mode never turned on for a bare binary. It does turn on when the nightly is
-  wrapped in an app bundle with a game category (`--engine nightly-app`) and run in
-  exclusive fullscreen, but that window disappeared as soon as another app took focus, so
-  I have no Game Mode numbers yet. The bundle lives under `runtime/` and is ignored by git.
-
-[Here's what I want to work on next.](docs/ROADMAP.md)
-If you try it, [send your specs and results](CONTRIBUTING.md).
-
-## Credit where it's due
-
-[shadPS4](https://github.com/shadps4-emu/shadPS4) does the emulation,
-[Qt Launcher](https://github.com/shadps4-emu/shadPS4-qtlauncher) manages the engine,
-and the [patch authors](https://github.com/shadps4-emu/ps4_cheats) made the game patches.
-My part here is the launcher and setup.
-
-My original code, tests, and docs—including earlier versions—are available under
-[the Unlicense](LICENSE), without a warranty. The game, emulator, patches, and
-their assets keep their own licenses and rights.
+My original code and docs use [the Unlicense](LICENSE). Fork away.
+I do not include game data, firmware, keys, saves, or emulator bundles.
+Want to help hunt frames? [Here's how to contribute](CONTRIBUTING.md).

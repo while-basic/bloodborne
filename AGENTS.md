@@ -1,69 +1,82 @@
 ```text
-Document:    Bloodborne Launcher Agent Instructions
-Version:     v1.3.0
+Document:    My Bloodborne Agent Guide
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-12
-SHA256:      fd989ac7722f338a313c620b6e5d3797374dd990fac676270113b5d0ae6c27e8
+Date:        2026-10-13
+SHA256:      a5dad6b47102849794d2d1ea2928efbe2e808f889cbaef51b2a2eb7de559d4ee
 Chain:       solana-mainnet
-Tx:          5izqrnBGqwj2ewPr45mgoQswH2767fVupdm7yiHZ4jGGYXXXECqCCY6rUB9viyFN2NcfqQUnLFuEbgzMjcjp6QPP
+Tx:          KrWxC2ZJK8XjobzVhwo7FH6E6zmb2ZE2BVBhpauvsLpj17L9HcfDZwMj6B7BrFmcGfPiLrj3D18PZ9RMjtyYZpn
 License:     The Unlicense (public domain dedication)
 ```
 
-# Agent instructions
+# Help me keep the hunt honest
 
-- Use graft first for code context. If the source checkout has no index, build
-  the local, ignored index or use the global session hook.
-- Work in an isolated worktree and commit finished changes. Do not merge into
-  main or publish without the user's direct instruction.
-- Never use GitHub Actions. Run the local checks in CONTRIBUTING.md.
-- Do not commit game data, firmware, keys, saves, emulator bundles, private logs,
-  or local agent configuration. Review history as well as the current tree.
-- Keep the current 24–55 FPS report separate from FPS cap settings. A dry run
-  cannot verify gameplay. The roadmap order is Mac 90+ FPS, Windows/Linux, browser.
-- This is Christopher Celaya's personal project: https://github.com/while-basic.
-  Write public pages in Christopher's direct, first-person voice. Avoid reports
-  about "the owner," corporate release language, and repeated disclaimers.
-  Original code and docs use the Unlicense; retain third-party credits and rights.
-  Keep the upstream standard LICENSE text unchanged for license detection;
-  its document metadata lives in docs/LICENSE-NOTES.md.
-- Produced documents use the standard header fields with Christopher Celaya as
-  author, the personal GitHub URL as contact, and the Unlicense. Anchor
-  changed header-bearing files with docseal on both chains before committing;
-  if anchoring fails, stamp and document the reason.
-- After each commit, add or refresh one short completion note here.
+I'm Christopher Celaya, [while-basic](https://github.com/while-basic). This is
+my personal Bloodborne launcher. Read the README, tutorial, contribution
+checks, and performance notes before changing the setup.
 
-## Decisions still open
-The existing repository is while-basic/bloodborne and is public. The current session authorizes pushing the reviewed work to main; no new repository is needed. Still confirm the target resolution/quality for 90+ FPS and whether browser work means local execution or streaming. Keep older route FPS measurements separate from the latest qualitative boss-test report.
+## Voice and public docs
+
+- Write about my work as “I” and “my.” Speak to readers as “you.” Do not call
+  me “the user” or “the owner” in public docs.
+- Use short sentences and everyday words. A little fun fits; fake FPS does not.
+- My shared footage shows 50+ FPS and has reached over a million viewers.
+  That is my report, not a repeatable benchmark. Keep historical measurements,
+  later play reports, FPS caps, and new tests separate.
+- Original code and docs use the Unlicense. Keep upstream LICENSE text intact;
+  its document header belongs in docs/LICENSE-NOTES.md. Keep third-party credit.
+- New documents use the standard header fields, my name, my GitHub contact,
+  and the Unlicense. Seal changed header-bearing files with docseal on both
+  chains before commits. If it fails, stamp locally and record the reason.
+  In private upstream clones that I do not push, stamp only.
+
+## Setup help
+
+- Ask about exact firmware, Mac specs, game region/update, USB, Ethernet,
+  adapters, saves, free space, and protected drives before choosing a path.
+- Request permission before a system performance/load test. Explain its load,
+  duration, and limits. Honor permission already given in the current session.
+- Identify a queued PS4 system update before helping remove it. Leave game
+  updates and saves alone. Do not silently update firmware or reset a console.
+- Verify current primary sources. Do not turn a browser bug's affected range
+  into a promise of full jailbreak support for every version in that range.
+- Keep loader success, package transfer, installation, app launch, and actual
+  gameplay as separate checks. Ask what the console shows when you cannot see.
+- Do not format drives or change unrelated network settings as a shortcut.
+  My external SSD is off-limits: do not inspect, mount, read, or write it.
+
+## Code and delivery
+
+- Use Graft first for code context. If it cannot index a language or source,
+  say so once and use focused source reads. Do not keep retrying weak queries.
+- Make code changes in an isolated Git worktree. Preserve other worktrees.
+- Run CONTRIBUTING.md checks locally. Never create, trigger, monitor, or wait
+  for GitHub Actions.
+- Commit finished changes. Merge or publish only when I directly ask. Current
+  session permission does not become blanket permission for future sessions.
+- Review staged files and history. Keep games, firmware, keys, saves, emulator
+  bundles, credentials, local agent config, and raw logs out of Git.
+- After each commit, refresh one short completion note here.
+
+## Performance guardrails
+
+- Keep 1080p / 60 cap / perf 3 as the working baseline. The 900p boss trial
+  felt worse and was rolled back. Bigger FPS text was not a speedup.
+- profile_runtime.py measures CPU/GPU activity, not FPS or scene state.
+  Use light recordings during play; keep heavy Metal/Instruments tracing off.
+- Back up saves for experiments. Prefer separate emulator settings and copied
+  saves, and never test through my only copy of a save.
+- Measure the same scene and route. Check frame times, game speed, controls,
+  sound, visuals, and crashes. A higher cap or a dry run cannot prove 90+ FPS.
+- Work order: measured Mac performance, Windows/Linux, then browser research.
+  Browser-local execution versus streaming remains open.
 
 ## Completion note
 
-2026-10-12: Rewrote the public README, roadmap, contribution guide, and agent
-prompts in Christopher's first-person voice, retaining setup details and limits.
-The personal repo is public and pinned, with GitHub-recognized Unlicense terms.
-Two dry-run tests pass; real local prerequisites pass without launching or writing
-config. History/file screening and ignore checks pass. Gameplay was not retested.
-
-Document sealing: the earlier launcher mainnet timeout was resolved on retry
-during the personal rebrand. Headers record the latest successful anchors.
-The license-notes mainnet submission failed simulation; its devnet anchor and
-local hash stamp succeeded, and its header records that available evidence.
-
-2026-10-12 (later): Merged the m5-emulation launcher work into main after live-play
-measurements: `--engine nightly-app` (game-category bundle, the only way macOS Game Mode
-engages, exclusive fullscreen only), `--fullscreen-mode`, `--present-mode`, `--vblank`,
-720p/900p test sizes, Facegen disabled by default (`--keep-facegen`). README carries the
-measured table and the CPU-bound conclusion (crowd floor ~41 FPS at 1080p). Local checks
-pass (2 tests, py_compile, --help, diff --check). Gameplay was measured by hand with the
-DualShock, not by a scripted route.
-
-2026-10-12: `61e99d5` records the working 1080p profile, the rejected 900p trial, and the next-session guide; launcher help now qualifies earlier FPS and bottleneck claims. Local checks pass and private runtime data stays untracked.
-
-## Runtime profiling and next session
-2026-10-12: The restored 1080p / 60 FPS target / perf 3 run was reported as “very good.” Use the nightly binary, borderless fullscreen, requested Mailbox (driver falls back to Fifo), vblank 60, and FPS text scale 2.5. The exact command is in PERFORMANCE.md. No measured FPS was supplied for this run.
-The 900p boss attempt was reported as extremely laggy; its resolution patch is removed. Preserve the working 1080p baseline. Only the FPS text size differs from the earlier setup; saves were not restored.
-Use profile_runtime.py with --seconds 3600 --interval 2 during play; renew before its limit if needed, wait for the user's death report, then stop only the recorder with SIGINT. It cannot see the scene, detect death, or measure FPS. Keep heavy Metal/Instruments tracing off during combat; it previously added major overhead.
-Raw recordings, logs, settings, and saves stay private under ignored runtime/. The 1080p and 900p attempts end in 172604681876Z and 173400966672Z; the latter has the comparison and rollback record. PERFORMANCE.md has the resume instructions and local evidence pointers. Native ARM game entry remains unimplemented.
+2026-10-13: Reworked public docs in my voice, added the PS4-to-Mac tutorial and
+Claude entry point, and separated firmware claims, play reports, and FPS goals.
+The initial main push matched the remote. The working 1080p profile is preserved.
 
 <!-- graft:start -->
 ## Graft — repo context graph

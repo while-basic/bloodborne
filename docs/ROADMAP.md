@@ -1,70 +1,72 @@
 ```text
-Document:    What I Want to Work on Next
-Version:     v1.2.0
+Document:    My Bloodborne Roadmap
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-12
-SHA256:      e38d724a121f717b00c67b49efa0faabdb232ccf743eb4a0478ae5201374dc71
+Date:        2026-10-13
+SHA256:      3c00c842495c94a3d103eef45d073fa667d00bf00ef1314438ddab1a3e8538dc
 Chain:       solana-mainnet
-Tx:          gGaBqp5cmK6Dsw9CXdnudDF27anRVLmbTb45wjthfGodMFYMqsnimb2NNH1e3kbRwA6eFzN4nUuUYRAXE21w37S
+Tx:          sc24NQcFjUZiHQFaes5ShGF69HTdF9NuJzpqzFghdZ69QozHpYmRJwGRk4zHC3E2DdUt73M44GNkrRNHkDeRzy7
 License:     The Unlicense (public domain dedication)
 ```
 
-# What's next
+# One hunt at a time
 
-Right now I'm getting **24–55 FPS on my M5 Max with 128 GB of RAM**.
-Here's the order I want to tackle things.
+I got my own Bloodborne copy running on my M5 Max. More than a million people
+have seen the 50+ FPS footage. Now I want to make it run better, then help more
+people play their own copy on more computers.
 
-## 1. Get the Mac to 90+ FPS
+## Done: disc to Mac
 
-This is the first goal. I mean 90+ while actually playing, not just choosing a
-higher cap or catching one good frame on the counter.
+- [x] Load homebrew on my PS4 11.02 with a matching browser loader and payload.
+- [x] Set up the USB-C Ethernet link and local file transfers.
+- [x] Back up my disc and matching update, then launch CUSA00900 / 01.09 on Mac.
+- [x] Add resolution, FPS, and performance patch choices.
+- [x] Add config backups, a read-only setup check, and private logs.
+- [x] Enable pipeline caching and async logs; disable Facegen by default.
+- [x] Add a light recorder for CPU and whole-machine GPU activity.
+- [x] Share a guide that asks about gear, firmware, backups, and test permission.
+- [x] Add Codex and Claude prompts, plus USB and Ethernet paths.
 
-Before I can compare changes properly, I need a repeatable test: the same
-location, the same route, and the exact emulator build and patches written down.
-I'll record resolution, quality settings, average FPS, lows, and stutters.
-First visits to an area need their own runs because of shader compilation.
+These checks cover my setup and the tools in this repo. I have not personally
+tested every firmware route linked in the [tutorial](PS4-TO-MAC.md).
 
-Then I can work through where the time is going: CPU emulation, graphics
-translation, shaders, or frame pacing. I'll compare settings and upstream updates
-one at a time, including whether they change how the game looks or plays.
+## Next: 90+ FPS on Mac
 
-I haven't settled on a target resolution and quality level for 90+ yet.
-Some of this will depend on work in shadPS4 and the graphics drivers, so I
-don't have a date for it.
+- [ ] Fix the test scene, route, camera, and test length.
+- [ ] Record the engine build, patch hashes, power mode, and display refresh.
+- [ ] Capture real FPS and frame times across repeated warm-cache runs.
+- [ ] Find the slow work in game execution, graphics, or frame pacing.
+- [ ] Test one change at a time and keep a way to return to the baseline.
+- [ ] Check picture quality, game speed, controls, sound, crashes, and saves.
+- [ ] Reach and repeat 90+ FPS during play at a stated resolution and quality.
 
-## 2. Windows and Linux
+My baseline is 1080p / 60 cap / perf 3. I keep lower-resolution experiments
+separate. Choosing a 90 FPS patch does not check the last box. A short peak or
+an empty scene does not check it either. See [my notes](../PERFORMANCE.md).
 
-After the Mac work, I want to get this setup working well on Windows and Linux.
+## Then: Windows and Linux
 
-That means fixing the platform-specific paths and launch steps, testing native
-Vulkan drivers, and checking controllers, audio, fullscreen, and save/load.
-I'll list the hardware and results for each system as I test it.
-shadPS4 supporting a platform doesn't automatically mean this launcher is ready
-for it.
+- [ ] Replace Mac-only paths and launch steps.
+- [ ] Test each platform's Vulkan drivers and emulator build.
+- [ ] Check controllers, sound, fullscreen, and save/load.
+- [ ] Publish tested hardware and clear setup steps.
 
-## 3. The browser
+shadPS4 already supports more than Mac. This small wrapper still needs its own
+work and tests on those systems.
 
-Then I want to see what I can do in a web browser.
+## Later: the browser
 
-I haven't chosen between running it inside the browser and streaming it from
-a computer. They're very different projects. Running it locally would need
-a lot more work on the emulator, graphics, memory, and storage. Streaming
-would still need a host computer and a look at input lag.
+- [ ] Choose between local browser execution and streaming from a host computer.
+- [ ] Build a small proof of the chosen path.
+- [ ] Measure input delay, picture quality, storage needs, and performance.
 
-There's no browser build yet. I'll share what works when I have something
-to show.
+There is no browser build yet. This box gets a lot bigger when you open it.
 
-## Keeping track
+## What counts as a result
 
-For each update, I'll write down the build, settings, what changed, and what
-I measured. I also want to check controls, audio, game speed, crashes, and saves.
-More FPS isn't much use if the game stops working properly.
-
-When sharing a result, include the Mac/PC specs, OS and driver versions, emulator
-build/hash, patch XML hash, game region/update, power mode, display refresh rate,
-resolution, FPS cap, and enabled patches. Keep saves and private logs local.
-
-**October 12, 2026:** Published the Mac launcher, setup instructions, and prompts
-you can give your agent. Current gameplay is around 24–55 FPS. Mac 90+ comes first,
-then Windows and Linux, then the browser.
+I share the machine, OS, engine and repo commits, game version, patch hash,
+resolution, FPS cap, vblank, power mode, and display refresh. I keep first-visit
+shader stutter separate from cached runs and include slow frames and crashes.
+Raw traces, game files, and saves stay local. More frames are only a win if the
+game still works.
