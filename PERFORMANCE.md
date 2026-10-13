@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.6.0
+Version:     v2.7.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      6769ad988c452f9a1cc1e1bb6f8d349b432d357c94c5dcd0d9ef1ff8dd97bc91
+SHA256:      cc92e0021f4489c87408cbfa7f71cc004876a243ac841f80cf82d37b7680d31e
 Chain:       solana-mainnet
-Tx:          oVyWzvZj36eRuTSVMym2QoUUvYPTRXi3LMxbSBE3J2vrtMKzojnN8cLPC3cYFDZVnW5QkZibT2SeqS91kvZemmq
+Tx:          53ahk1LogKd7FKS9Zj1ZiW7cGYBVZjA9Ha78nYEJPipyVGxdqNz6qXFLtSxRipo45YCiQ6EcnmgyjsoawXgyj1K7
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -284,6 +284,59 @@ After clicking inside the game window, I checked walking and camera movement
 with the cache off and on. Both worked after the timed captures. Combat,
 sound, and game speed still need checks. My original saves and settings
 remain unchanged. The 90 FPS hunt is still on.
+
+## Following the draw calls
+
+I added an optional timer to my private driver build. It samples one draw in
+64 and changes the sample slot each time. It reads no clocks when switched
+off. The test checks passed, including eight separate recording threads.
+
+In one lamp-view capture, the main draw thread recorded 25,468 samples from
+about 1.63 million draws. Pipeline setup took **29.81%** of the sampled draw
+time. Changing draw state took **19.08%**, and sending the draw took
+**19.12%**. Those shares describe time inside the sampled calls. They are
+not shares of a whole frame or GPU time. The clocks and time spent waiting
+for a CPU turn are included.
+
+That diagnostic run averaged **26.36 FPS**, with a **10.00 FPS 1% low** and
+a worst frame of **125.06 ms**. Other apps were running. I have not measured
+the timer's overhead, so I am using this run to choose what to study next.
+
+## Reusing the same shader setup
+
+My next private driver change skips a shader bind when the same shader is
+already set and has no pending reset. A new drawing pass still gets its
+full setup. The build passed, along with 10,000 comparisons against the
+old method and checks for resets and memory errors.
+
+One early test moved away from the starting view. I threw out its speed
+comparison. I then added an optional F9 input lock to my test build. It
+blocks game input until that test app closes. Menu input worked before
+the lock; walking and camera keys had no effect after it. The lock also
+passed 65 code checks. It stays out of normal play.
+
+Here are four new runs in order. Each used a fresh copy of my saves, the
+same app and driver, 1080p, a 120 FPS cap, perf 3, and the 64 KiB buffer
+experiment. I locked input and checked the lamp view at both ends. Each
+capture lasted 60 seconds after a 30-second warmup. The extra timing
+probes were off.
+
+| Shader reuse | Average FPS | 1% low FPS | Worst frame | Frames over 50 ms |
+| --- | ---: | ---: | ---: | ---: |
+| Off | 46.11 | 17.05 | 150.05 ms | 13 |
+| On | 50.63 | 18.52 | 191.78 ms | 8 |
+| Off again | 42.42 | 16.19 | 191.71 ms | 9 |
+| On again | 50.44 | 22.79 | 66.75 ms | 9 |
+
+Both enabled averages beat both controls. That is a useful lead, but other
+apps were still working and I did not track focus for the whole capture.
+The first enabled run also had a worse longest frame. I am keeping this
+change private and off by default while I check it further. A still view
+does not test combat, sound, controls, or game speed. **90+ FPS is still open.**
+
+All 16 original save files still match their backups. My original settings
+now differ only in volume, which changed from 100 to 0. I left that change
+alone. The tests used separate settings and copied saves.
 
 ## Other paths I checked
 

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.6.0
+Version:     v2.7.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      4adef1371c7e8840f41c7190e26905cdf8c9284e1fbfc1f812b72b1a3e60ef1d
+SHA256:      275b5dd2db26adf4dc7ceb9fbbedcb9d429a3a947b57ccd22e43058bd3cd75e8
 Chain:       solana-mainnet
-Tx:          3KQosXsTiBUFfDTMjsEDQbQREGBMjuMot1Wxokiu35grgnVD6jfE4AbngmLZvSpi6rNFXtDfnKeumvsYSYSNi6jz
+Tx:          3YsQmfFgnS9Jmw7sWmHEfzdVHtnDpyR9Qd3XWWsPRujStTyEYV8iNNprp57iicmLsfd2vojoTWA323tM66nkQXCp
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,46 +74,33 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Published repeated driver-cache and effects tests, then measured
-depth-state creation at 1.45% of wall time in one scene. Cache reuse works,
-but no FPS gain is proved. Original saves and settings are intact; 90+ FPS is open.
+2026-10-13: Added draw timing notes and four locked-input shader-reuse tests.
+Enabled runs reached 50.63/50.44 FPS; controls reached 46.11/42.42. This is
+promising, with background work still uncontrolled. 90+ FPS remains open.
 
 ## Tests still open
 
-I tried reusing unchanged driver tables in a private Mesa build. Off/on/off
-captures averaged 27.63/50.74/54.77 FPS, so I kept reuse off. Private commit
-`b7f7574` saves that experiment; 30 method checks pass, including reset handling.
-
-Private Mesa commit `1f83229` adds a small depth/stencil state cache, off by
-default. It passed 36 checks and 20,000 threaded lookups with memory checks,
-and the Intel driver builds. Off/on/off/on lamp captures averaged
-29.55/55.54/50.15/42.16 FPS. No gain is established. All four used matching
-driver, executable, game-patch, and starting-config hashes. Lamp endpoints
-were checked. Initial keyboard checks failed to move the character.
-
-Private commit `d387faf` adds an optional once-per-second depth-state probe.
-It builds and passes 49 checks plus 20,000 threaded lookups. Creation took
-1.45% of wall time in the control; the enabled run had 100% hits and 0.12%
-lookup time. Keep the cache private and off; this is a small measured cost.
-Diagnostic FPS averaged 30.63/21.89, with a 5.05-second stall in the second
-run. Probe cost and background load were not controlled. Walking and camera
-checks passed in both runs after clicking inside the game surface. Combat,
-sound, and game speed remain open. Both diagnostic apps are closed.
-
-Keep the optional buffer patch off by default. My 16 KiB repeats had stalls;
-background load was not held constant. Immediate display mode and vblank 240
-showed no clear gain. Measure logger overhead and a repeated busy route next,
-including combat, sound, game speed, and picture quality.
-
-Private source commit `2e603c5` saves the renderer and thread-priority probes;
-leave them off during comparisons. Draw command recording is the next lead.
-Mesa already skips replay-queue copies for one-time command buffers, which
-the renderer uses; do not add a second version of that optimization.
-ThinLTO stalled at startup. A manually moved trial is invalid and its copied
-save stays private. Raw captures and exact test state stay in ignored runtime/.
-All 16 original saves and my original config were checked unchanged.
-Patch files keep needed context spaces through .gitattributes; check them
-with git apply before sharing.
+- Private Mesa `675da32` skips clean, unchanged shader binds. It builds and
+  passes 10,000 old-method comparisons. Keep it off by default pending more
+  scenes and combat, sound, controls, and game-speed checks.
+- Private source `9239edb` adds the one-way F9 benchmark input lock. Its 65
+  checks and live lock checks pass. Restart the test app to regain input.
+  An earlier unlocked diagnostic moved and is invalid for speed comparison.
+- Depth-state and descriptor caches have no repeatable FPS gain. Keep them
+  private and off. Depth-state creation measured only 1.45% of wall time in
+  one diagnostic. Optional probes and thread-priority changes stay off for
+  normal comparisons. PERFORMANCE.md carries the earlier results.
+- Keep the optional buffer patch off by default. Draw setup is the next
+  lead. Mesa already skips replay copies for one-time command buffers;
+  do not duplicate that work or skip barriers without proving correctness.
+- Raw captures, exact source patches, build hashes, and the next trial stay
+  in ignored runtime/optimization-state.json and nearby trial folders.
+  All 16 original saves match their backups. The original config differs
+  only in volume (100 to 0); leave it untouched. The external SSD remains
+  off-limits. Check preservation again after each experiment.
+- Preserve patch context spaces through .gitattributes and check patches
+  with git apply before sharing. Heavy tracing and debugger attachment
+  remain off-limits for these runs.
 
 <!-- graft:start -->
 ## Graft — repo context graph
