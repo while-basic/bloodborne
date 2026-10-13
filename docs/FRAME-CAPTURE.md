@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Frame Capture Guide
-Version:     v1.2.0
+Version:     v1.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      93c3e756dc5370b6eef054854666f0b951bedcf72e2140102a9a1530f7288039
+SHA256:      89709894533b2c5e16e6370aa0c2853eb16087aaacdd6c2831ff66e2657bc33c
 Chain:       solana-mainnet
-Tx:          5E4KV7oDQZhNdjEDGgP24yBxpG2nandeJJhSWzwRQJPuetKYiRMstDU1RvSXFXXneSygdksHbsLxvrtQfKBVQEYN
+Tx:          55nmQ73AKAumuPgUTyb96ARmQZ3Ao5c7iiNMjT4hULSJH2cyunwJcgR9UYQSLYWYjYUJXrbtTuBydPZvFTeNWBU5
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -122,9 +122,10 @@ Build and compare the game separately, using the same scene and settings.
 
 I am testing a separate
 [memory-tracking patch](../patches/shadps4/buffer-write-window.patch) on my M5 Max.
-On a write fault, it can mark an aligned 16 KiB group of buffer memory as changed.
-It only widens the check when the whole group is mapped. Texture checks keep
-their original range. The feature is **off by default**.
+On a write fault, it can mark a 16, 64, or 256 KiB group of buffer memory as
+changed. It only widens the check when the whole group is mapped and contains
+the original request. Texture checks keep their original range. The feature
+is **off by default**.
 
 Use the same pinned source and a separate copy of your settings and saves.
 Ask permission before the load test. Apply the patch before building:
@@ -140,26 +141,33 @@ From this launcher repo, check the changed methods:
 python3 check_buffer_faults.py /path/to/shadPS4
 ```
 
-This needs a C++20 compiler and shadPS4's Boost submodule. It checks ten cases,
-including gaps in mapped memory, address overflow, and the unchanged texture
-range. It does not test thread safety, combat, or FPS.
+This needs a C++20 compiler and shadPS4's Boost submodule. It checks 40 memory
+cases and 14 setting combinations against the changed source. These include
+gaps, address overflow, requests that cross a group, and the unchanged texture
+range. The checks do not test thread safety, combat, or FPS.
 
 After building, run the same copied save twice. Keep every setting fixed and
 choose a new frame log each time. Run these from your private test folder:
 
 ```sh
 # Control: ordinary buffer tracking.
-SHADPS4_WRITE_FAULT_WINDOW_16K=0 SHADPS4_FRAME_LOG="$PWD/control.csv" \
+SHADPS4_BUFFER_WRITE_WINDOW_KIB=0 SHADPS4_FRAME_LOG="$PWD/control.csv" \
   /path/to/patched/shadps4 --show-fps --game /path/to/my/game/eboot.bin
 
-# Experiment: widen buffer write tracking only.
-SHADPS4_WRITE_FAULT_WINDOW_16K=1 SHADPS4_FRAME_LOG="$PWD/experiment.csv" \
+# Experiment: try a 64 KiB group for buffer writes.
+SHADPS4_BUFFER_WRITE_WINDOW_KIB=64 SHADPS4_FRAME_LOG="$PWD/experiment.csv" \
   /path/to/patched/shadps4 --show-fps --game /path/to/my/game/eboot.bin
 ```
 
-Leaving the first variable unset also keeps ordinary tracking. My results and
-their limits are in [the performance notes](../PERFORMANCE.md). This experiment
-does not change the normal launcher profile or meet the 90+ FPS goal.
+Use `0`, `16`, `64`, or `256` for the group size. Bigger was not always faster
+in my tests. Repeat the control after each trial, and compare slow frames too.
+
+The old `SHADPS4_WRITE_FAULT_WINDOW_16K=1` switch still selects 16 KiB. A valid
+new setting takes priority over it, including `0` to turn the feature off.
+Other values are ignored. Leave both switches unset for ordinary tracking.
+My results and their limits are in [the performance notes](../PERFORMANCE.md).
+This experiment does not change the normal launcher profile or meet the
+90+ FPS goal.
 
 ## License
 

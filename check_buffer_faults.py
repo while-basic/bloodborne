@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne Buffer Fault Boundary Check
-# Version:     v1.0.0
+# Version:     v1.1.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-13
-# SHA256:      3d44b120d16ef9c3507204cbc07646ea381c149e2aaac7233a466a5136873279
+# SHA256:      a3ed04ca1c125412e5c84e9163c717569408ce3648a32b9412aa774378b83baa
 # Chain:       solana-mainnet
-# Tx:          DLUihcTLgNn3zpEuYe2Kh8w85C87EWPJ889j6bgy4tMtutRgteoZ4j781hveD8kgnK8VfFCEinmcd6Qyxgu6ZZa
+# Tx:          2dLFsKCeG3S7m6DMgsCp7yg58UBMMCSS6unpL5k8dHJPiuJyNY4vmgDHbkSJ1w1VcahGJYymTSQoZs14Ln8x4H8o
 # License:     The Unlicense (public domain dedication)
 """Check the optional buffer patch against real source methods, without a game."""
 import argparse
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -53,14 +54,14 @@ struct Rasterizer {
     TextureCache texture_cache;
     boost::icl::interval_set<VAddr> mapped_ranges;
     std::shared_mutex mapped_ranges_mutex;
-    bool InvalidateMemory(VAddr,u64,bool=false,bool=false);
+    bool InvalidateMemory(VAddr,u64,bool=false,u64=0);
     bool IsMapped(VAddr,u64);
     void map(u64 start,u64 end) {
         mapped_ranges += decltype(mapped_ranges)::interval_type::right_open(start,end);
     }
 };
 void require(bool value) { if (!value) throw std::runtime_error("boundary check failed"); }
-void expect(Rasterizer& r,u64 addr,u64 size,bool enabled,u64 buffer_addr,u64 buffer_size,bool locks=false) {
+void expect(Rasterizer& r,u64 addr,u64 size,u64 enabled,u64 buffer_addr,u64 buffer_size,bool locks=false) {
     require(r.InvalidateMemory(addr,size,locks,enabled));
     require(r.buffer_cache.calls == std::vector<std::tuple<u64,u64,bool>>{{buffer_addr,buffer_size,locks}});
     require(r.texture_cache.calls == std::vector<std::pair<u64,u64>>{{addr,size}});
@@ -69,29 +70,57 @@ void expect(Rasterizer& r,u64 addr,u64 size,bool enabled,u64 buffer_addr,u64 buf
 
 CASES = r'''
 int main() {
-    try {
-        { Rasterizer r; r.map(0x10000,0x20000); expect(r,0x12345,8,false,0x12345,8); }
-        { Rasterizer r; r.map(0x10000,0x20000); expect(r,0x12345,8,true,0x10000,0x4000,true); }
-        { Rasterizer r; r.map(0x12000,0x14000); expect(r,0x12345,8,true,0x12345,8); }
-        { Rasterizer r; require(!r.InvalidateMemory(0x12345,8,false,true));
-          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); }
-        { Rasterizer r; r.map(0x10000,0x20000); expect(r,0x14000,8,true,0x14000,0x4000); }
-        { Rasterizer r; r.map(0x10000,0x20000); expect(r,0x13fff,1,true,0x10000,0x4000); }
-        { Rasterizer r; require(!r.InvalidateMemory(UINT64_MAX-3,8,false,true));
-          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); }
-        { Rasterizer r; r.map(0x10000,0x11000); r.map(0x12000,0x14000);
-          expect(r,0x12345,8,true,0x12345,8); }
-        { Rasterizer r; r.map(UINT64_MAX-0x3fff,UINT64_MAX);
-          expect(r,UINT64_MAX-7,7,true,UINT64_MAX-7,7); }
-        { Rasterizer r; r.map(0x10000,0x20000); require(!r.InvalidateMemory(0x12345,0,false,true));
-          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); }
-    } catch (const std::exception& error) {
-        std::cerr << error.what() << '\n';
-        return 1;
+    unsigned cases = 0;
+    for (u64 window : {16384ULL,65536ULL,262144ULL}) {
+        const u64 base=0x100000, addr=base+0x2345;
+        { Rasterizer r; r.map(base,base+window); expect(r,addr,8,0,addr,8); ++cases; }
+        { Rasterizer r; r.map(base,base+window); expect(r,addr,8,window,base,window,true); ++cases; }
+        { Rasterizer r; r.map(addr,addr+8); expect(r,addr,8,window,addr,8); ++cases; }
+        { Rasterizer r; require(!r.InvalidateMemory(addr,8,false,window));
+          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); ++cases; }
+        { Rasterizer r; r.map(base,base+2*window); expect(r,base+window,8,window,base+window,window); ++cases; }
+        { Rasterizer r; r.map(base,base+window); expect(r,base+window-1,1,window,base,window); ++cases; }
+        { Rasterizer r; require(!r.InvalidateMemory(UINT64_MAX-3,8,false,window));
+          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); ++cases; }
+        { Rasterizer r; r.map(base,base+0x1000); r.map(base+0x2000,base+window);
+          expect(r,addr,8,window,addr,8); ++cases; }
+        { Rasterizer r; r.map(UINT64_MAX-window+1,UINT64_MAX);
+          expect(r,UINT64_MAX-7,7,window,UINT64_MAX-7,7); ++cases; }
+        { Rasterizer r; r.map(base,base+window); require(!r.InvalidateMemory(addr,0,false,window));
+          require(r.buffer_cache.calls.empty() && r.texture_cache.calls.empty()); ++cases; }
+        { Rasterizer r; r.map(base,base+2*window);
+          expect(r,base+window-4,8,window,base+window-4,8); ++cases; }
+        { Rasterizer r; r.map(base,base+2*window);
+          expect(r,base,window+8,window,base,window+8); ++cases; }
     }
-    std::cout << "10 boundary cases pass. This is not a concurrency or FPS test.\n";
+    for (u64 invalid : {1ULL,4096ULL,32768ULL,UINT64_MAX}) {
+        Rasterizer r; r.map(0x100000,0x200000);
+        expect(r,0x123456,8,invalid,0x123456,8); ++cases;
+    }
+    std::cout << cases << " actual-method window boundary checks passed\n";
 }
 '''
+
+
+ENV_PREAMBLE = r"""
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+using u64 = std::uint64_t;
+int main() {
+    u64 buffer_fault_window = 0;
+"""
+ENV_END = r"""
+    std::cout << buffer_fault_window << "\n";
+}
+"""
+ENV_CASES = [
+    (None, None, 0), ("0", None, 0), ("1", None, 16384), ("10", None, 0),
+    (None, "0", 0), (None, "16", 16384), (None, "64", 65536),
+    (None, "256", 262144), ("1", "0", 0), ("1", "64", 65536),
+    (None, "32", 0), (None, "64x", 0), ("1", "-1", 16384), (None, "", 0),
+]
 
 
 def main():
@@ -111,6 +140,24 @@ def main():
                             str(cpp), "-o", str(binary)], capture_output=True, text=True, check=True)
             result = subprocess.run([str(binary)], capture_output=True, text=True, check=True)
             print(result.stdout, end="")
+            page_manager = (args.source / "src/video_core/page_manager.cpp").read_text()
+            start = page_manager.index('        const char* wide_faults = std::getenv(')
+            end = page_manager.index('        // Should be called first.', start)
+            cpp.write_text(ENV_PREAMBLE + page_manager[start:end] + ENV_END)
+            subprocess.run([args.compiler, "-std=c++20", "-O1", str(cpp), "-o", str(binary)],
+                           capture_output=True, text=True, check=True)
+            for legacy, window, expected in ENV_CASES:
+                env = os.environ.copy()
+                for name, value in (("SHADPS4_WRITE_FAULT_WINDOW_16K", legacy),
+                                    ("SHADPS4_BUFFER_WRITE_WINDOW_KIB", window)):
+                    env.pop(name, None)
+                    if value is not None:
+                        env[name] = value
+                result = subprocess.run([str(binary)], env=env, capture_output=True,
+                                        text=True, check=True)
+                if int(result.stdout.strip()) != expected:
+                    raise ValueError(f"Wrong buffer window for {legacy!r}, {window!r}")
+            print(f"{len(ENV_CASES)} actual-source environment checks passed")
     except (OSError, ValueError, IndexError, subprocess.CalledProcessError) as error:
         detail = error.stderr if isinstance(error, subprocess.CalledProcessError) else str(error)
         parser.error(f"Could not check the patched source: {detail}")

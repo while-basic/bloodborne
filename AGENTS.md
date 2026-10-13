@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.3.0
+Version:     v2.4.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      ae4036114e894ddbe2a067405c7bf53d53d955364fc2a0da7c4a23fa73f4fea6
+SHA256:      4edf4b103dcfab6deb45f1e23faa0f37962f3e3a02a24b76481e995e01744d2c
 Chain:       solana-mainnet
-Tx:          3Nii8czYPttiJGVC7c2tLx7HKXxpvKC2qETHM4itNyxMZvtfUwYPC6Kqf7eydrVCZnrz2wjk9iPWWm5kd6EV2Xj4
+Tx:          5TiJmySnxnRbwt1u6KJSah7LwJhMHdJbgry1UbkBBsvVEkttQKETcZy7oWUTgLwF6uGjzbEdKoKh6Spe3Fui71oY
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,21 +74,24 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Added an optional buffer-write patch and ten boundary checks. The
-same-code lamp comparison averaged 37.96 FPS off and 52.29 FPS on; lows stayed
-near 24 FPS and one hitch reached 141 ms. My normal profile stays unchanged.
+2026-10-13: Added 16/64/256 KiB choices and fixed cross-group memory requests.
+Forty memory checks and 14 setting checks pass. The 64 KiB lamp repeats averaged
+55.17 and 56.36 FPS. My normal profile stays unchanged; 90+ FPS is still open.
 
 ## Tests still open
 
-Steady 90+ FPS remains a goal. Measure logger overhead, repeat the same busy
-route, and check combat, sound, game speed, and picture quality. The buffer-pool
-fix has no proven FPS gain. The separate buffer-write experiment improved the
-average in one still view, but its lows and hitch still need work. Keep it off
-by default. A private renderer timing build is ready for the next investigation.
-ThinLTO stalled at startup, and the first 90-cap capture changed scenes; do not
-promote either result. Keep raw captures and experiment state under ignored
-runtime/. Patch files keep their needed context spaces through .gitattributes;
-check them with git apply before sharing.
+Keep the optional buffer patch off by default. My 16 KiB repeats had stalls;
+background load was not held constant. Immediate display mode and vblank 240
+showed no clear gain. Measure logger overhead and a repeated busy route next,
+including combat, sound, game speed, and picture quality.
+
+Private source commit `2e603c5` saves the renderer and thread-priority probes;
+leave them off during comparisons. Draw command recording is the next lead.
+ThinLTO stalled at startup. A manually moved trial is invalid and its copied
+save stays private. Raw captures and exact test state stay in ignored runtime/.
+All 16 original saves and my original config were checked unchanged.
+Patch files keep needed context spaces through .gitattributes; check them
+with git apply before sharing.
 
 <!-- graft:start -->
 ## Graft — repo context graph

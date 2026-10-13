@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.3.0
+Version:     v2.4.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      9850501e8966220329fe7e3c084616d301dda7f4166d8e87dd0e8a09de434d89
+SHA256:      4607d3bf9ca4c24713de186558e87121cbc11db866d10755dbeb6f208a9a52a2
 Chain:       solana-mainnet
-Tx:          4yamfmzpSUm6yZbuPfY68LAw8mzYbzdtNmo4e7zgSszfwmNP5EWyW8xEaorGCrqnaTmp6wtBmvvbCaC3wXrr16hH
+Tx:          5BuA9Qr7DhB5qY6NijaVCuTvjbMdCV74vK6uVeDDmzccJgcLZJM59Kmsu7XZB5DDzv5ZLD1BhUsNadTFbRDJKr4R
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -161,6 +161,45 @@ intact. They do not settle thread safety, busy routes, combat, sound, or game
 speed. My normal 1080p profile is unchanged. The
 [capture guide](docs/FRAME-CAPTURE.md#optional-buffer-write-experiment) explains
 how to compare the patch with copied saves.
+
+## Bigger buffer groups
+
+I added 64 and 256 KiB choices to the optional patch. I also fixed a boundary
+case: a wider group must cover the whole original request. A request that
+crosses the group keeps its original size.
+
+These later tests use one executable, 1080p, a 120 FPS++ cap, perf 3, and vblank
+120. The requested Mailbox display mode falls back to Fifo on this driver.
+Each capture covers 60 seconds at the same still lamp view, with copied saves.
+The private renderer timer and thread-priority experiments were off.
+
+| Buffer group | Average FPS | 1% low | Worst frame |
+| --- | ---: | ---: | ---: |
+| 16 KiB | 45.85 | 29.94 | 33.71 ms |
+| 64 KiB | 55.17 | 35.75 | 33.72 ms |
+| 256 KiB | 49.89 | 26.25 | 66.59 ms |
+| 16 KiB, fresh repeat | 39.76 | 7.66 | 173.37 ms |
+| 16 KiB, later window in that repeat | 45.52 | 11.67 | 1,025.64 ms |
+| 64 KiB, fresh repeat | 56.36 | 29.67 | 45.44 ms |
+
+The 64 KiB average repeated well. The 16 KiB repeats were uneven, and I did
+not hold background work constant. I requested window focus before the later
+16 KiB capture, but did not measure focus through the run. These results do
+not prove that the group size alone caused the gain. I kept a manually moved
+trial out of this comparison.
+
+I also tried Immediate display mode with 64 KiB. It averaged **53.06 FPS**,
+with a **21.66 FPS 1% low** and an **83.30 ms** worst frame. That was no clear
+win. I have not checked tearing or sound in that mode.
+
+With 64 KiB and the usual display mode, raising vblank from 120 to 240 averaged
+**56.49 FPS**, with a **29.46 FPS 1% low** and a **41.56 ms** worst frame.
+That is almost the same average as the 120-vblank repeat. A faster timer did
+not get me to 90 FPS.
+
+The updated patch passes 40 memory checks and 14 setting checks. It stays
+off by default. These still views do not verify combat, game speed, or steady
+90+ FPS. My normal profile stays unchanged.
 
 ## Other paths I checked
 

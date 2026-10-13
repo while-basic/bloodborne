@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.3.2
+# Version:     v1.4.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-13
-# SHA256:      94a08a90ddf736d70d7176b6a4f3e14dba4204f4e3512c6eef8c287df8fa32b5
+# SHA256:      d9ac361899d50f9eb95967b3fee02971320cf79eb4593574e906a95ae2bd8d66
 # Chain:       solana-mainnet
-# Tx:          3CydquVH3qS3eUoU2ndX3h1uUp1jJgGpeg3KyyyFeo6XMNzEcQyjp2k4cN9QmimTFioxdmh3ckH2TZnjR9V9b14C
+# Tx:          36K8UDAstDJw8ePBWowrCowzXAEg7BHYXjwK6FA3mWNfiPsc359GRKs2QFyjbU1LDQBK9oa35pBQYmsV9AJR9xtX
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -135,7 +135,7 @@ def main():
     parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
                         help="experimental emulated vblank rate, 30–1000 Hz; default = --fps. Measure changes before keeping them")
     parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
-                        help="swapchain present mode to request (KosmicKrisp only offers the Fifo family)")
+                        help="swapchain present mode to request; support depends on the Vulkan driver")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
     parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
