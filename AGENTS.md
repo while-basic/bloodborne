@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.4.0
+Version:     v2.5.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      4edf4b103dcfab6deb45f1e23faa0f37962f3e3a02a24b76481e995e01744d2c
+SHA256:      bc7301e7b874f92c93e7cb36be08cafa9c1e0ef51fc912357a8fe150936b9618
 Chain:       solana-mainnet
-Tx:          5TiJmySnxnRbwt1u6KJSah7LwJhMHdJbgry1UbkBBsvVEkttQKETcZy7oWUTgLwF6uGjzbEdKoKh6Spe3Fui71oY
+Tx:          4VL16bR59G1fUiRqapkzCPtQV4HcsCVqboCKiwJsvheMBmE9inkPbiaUZiguDu986Zyq3e64cZ2r6VK3oR4PEP3p
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,11 +74,25 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Added 16/64/256 KiB choices and fixed cross-group memory requests.
-Forty memory checks and 14 setting checks pass. The 64 KiB lamp repeats averaged
-55.17 and 56.36 FPS. My normal profile stays unchanged; 90+ FPS is still open.
+2026-10-13: Recorded repeated driver-cache and effects tests. Neither cache
+showed a repeatable gain; both stay private and off. All 16 original saves
+and my config are unchanged. My normal profile stays intact; 90+ FPS is open.
 
 ## Tests still open
+
+I tried reusing unchanged driver tables in a private Mesa build. Off/on/off
+captures averaged 27.63/50.74/54.77 FPS, so I kept reuse off. Private commit
+`b7f7574` saves that experiment; 30 method checks pass, including reset handling.
+
+Private Mesa commit `1f83229` adds a small depth/stencil state cache, off by
+default. It passed 36 checks and 20,000 threaded lookups with memory checks,
+and the Intel driver builds. Off/on/off/on lamp captures averaged
+29.55/55.54/50.15/42.16 FPS. No gain is established. All four used matching
+driver, executable, game-patch, and starting-config hashes. Lamp endpoints
+were checked; movement, combat, sound, and game speed remain unverified.
+Keyboard movement and camera input did not visibly work after the last
+capture. Resolve focus/input before a route test. Shutdown cache counts did
+not appear; add a separate low-cost hit/creation-time probe before more trials.
 
 Keep the optional buffer patch off by default. My 16 KiB repeats had stalls;
 background load was not held constant. Immediate display mode and vblank 240

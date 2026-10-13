@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.4.0
+Version:     v2.5.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      4607d3bf9ca4c24713de186558e87121cbc11db866d10755dbeb6f208a9a52a2
+SHA256:      0f1f7451c715fa65e48e705e36044892a59f46de8a45ccc81ede3c82418815cc
 Chain:       solana-mainnet
-Tx:          5BuA9Qr7DhB5qY6NijaVCuTvjbMdCV74vK6uVeDDmzccJgcLZJM59Kmsu7XZB5DDzv5ZLD1BhUsNadTFbRDJKr4R
+Tx:          5JCuyKwQZHQSr7mwnDfFH265L5bWgyzQ4Eo8UthThkntv9fQrZcuXEu7yPUHkkz2KrNCuwXcaZWvqzvnJYEtKg66
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -200,6 +200,75 @@ not get me to 90 FPS.
 The updated patch passes 40 memory checks and 14 setting checks. It stays
 off by default. These still views do not verify combat, game speed, or steady
 90+ FPS. My normal profile stays unchanged.
+
+## Driver tables: the repeat gets the last word
+
+I built a private Mesa driver that can reuse unchanged descriptor tables.
+These tables tell the GPU where to find its data. The switch is off by default.
+Thirty checks passed against the changed methods, including reset handling.
+
+I used one driver and executable for these 60-second lamp-view captures.
+They kept 1080p, cap 120, perf 3, vblank 120, and the 64 KiB buffer experiment.
+The other timing probes and thread-priority experiment were off.
+
+| Reuse tables | Average FPS | 1% low | Worst frame |
+| --- | ---: | ---: | ---: |
+| Off, first | 27.63 | 12.75 | 100.02 ms |
+| On | 50.74 | 20.71 | 100.01 ms |
+| Off, repeat | 54.77 | 27.72 | 42.35 ms |
+
+The first pair looked like a win. The repeat took that win away. I have not
+shown a gain from this change, so I kept it private and left reuse off.
+Background work and window focus were not held constant through each run.
+
+With that same driver and reuse off, I tried fewer effects at the same lamp.
+Perf 4 adds the dynamic-light-shadow removal patch. Perf 7 also removes SSAO,
+depth of field, and bloom. Each run used a fresh copy of the starting save.
+
+| Effects setting | Average FPS | 1% low | Worst frame |
+| --- | ---: | ---: | ---: |
+| Perf 3, control above | 54.77 | 27.72 | 42.35 ms |
+| Perf 4 | 49.36 | 21.81 | 108.32 ms |
+| Perf 7 | 26.00 | 4.03 | 515.62 ms |
+
+Other work was running on my Mac, including checks for another project during
+the perf-7 run. These results do not show the cost of each effect on its own.
+They do show that fewer effects did not produce a clean 90 FPS result here.
+I checked the scene at both ends, but not combat, sound, or game speed.
+My normal profile stays at perf 3.
+
+## Depth states: another promising first lap
+
+I added a small, private cache for Metal depth and stencil states. These
+states help decide which pixels to draw. The cache can keep up to 128 states
+and reuse a match. It is off by default.
+
+The Intel driver builds. The cache passed 36 checks and 20,000 threaded
+lookups with memory-error checks. Those tests cover its keys and object
+lifetime. They do not prove that every game renders correctly.
+
+I repeated the same 60-second lamp view with the cache off and on. All four
+runs used the same driver, game patch, starting settings, and executable.
+I kept 1080p, cap 120, perf 3, vblank 120, and the 64 KiB buffer experiment.
+Other timing probes, table reuse, and thread-priority changes were off.
+
+| Cache | Average FPS | 1% low | Worst frame |
+| --- | ---: | ---: | ---: |
+| Off, first | 29.55 | 14.49 | 125.03 ms |
+| On, first | 55.54 | 27.11 | 74.89 ms |
+| Off, repeat | 50.15 | 28.91 | 49.96 ms |
+| On, repeat | 42.16 | 16.78 | 62.72 ms |
+
+The first gain did not survive the repeat. The second enabled run had 82
+frames longer than 50 ms. I have not shown a speedup, so this cache stays
+private and off. I checked the lamp view at both ends. Background load and
+window focus were not held steady. A later keyboard check did not show
+movement, so controls and combat remain unverified for this build.
+
+The driver did not print its shutdown cache counts. I need a separate light
+probe to count cache hits and time state creation before drawing conclusions
+about why this change did or did not help. My original saves and settings
+remain unchanged. The 90 FPS hunt is still on.
 
 ## Other paths I checked
 
