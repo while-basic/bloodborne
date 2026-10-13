@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.3.1
+# Version:     v1.3.2
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
-# Date:        2026-10-12
-# SHA256:      c56ac047b9df3a6caf4ad5821835960fde62461a544f11d6330a879a9ca929e1
+# Date:        2026-10-13
+# SHA256:      94a08a90ddf736d70d7176b6a4f3e14dba4204f4e3512c6eef8c287df8fa32b5
 # Chain:       solana-mainnet
-# Tx:          5Bt6Fs24FeJK4W4JS4Zc6Y4U9TgcnLBbxX92BzXiBHHm4HcrRjtHFCXt5Xr3sAyfdiwfCpNYfH83P3T4saMufK3W
+# Tx:          3CydquVH3qS3eUoU2ndX3h1uUp1jJgGpeg3KyyyFeo6XMNzEcQyjp2k4cN9QmimTFioxdmh3ckH2TZnjR9V9b14C
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -103,7 +103,7 @@ def write_config(args):
     config = json.loads(original)
     width, height = SIZES[args.resolution]
     config["GPU"].update(internal_screen_width=width, internal_screen_height=height,
-                         vblank_frequency=args.vblank or args.fps, full_screen=args.fullscreen,
+                         vblank_frequency=args.vblank, full_screen=args.fullscreen,
                          full_screen_mode=("Fullscreen" if args.fullscreen_mode == "exclusive"
                                            else "Fullscreen (Borderless)") if args.fullscreen else "Windowed")
     if args.present_mode:
@@ -133,7 +133,7 @@ def main():
     parser.add_argument("--keep-facegen", action="store_true",
                         help="leave Facegen enabled (default disables it to stop the spiky-geometry glitch)")
     parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
-                        help="emulated vblank rate; default = --fps. Higher than the FPS++ cap removes flip waits")
+                        help="experimental emulated vblank rate, 30–1000 Hz; default = --fps. Measure changes before keeping them")
     parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
                         help="swapchain present mode to request (KosmicKrisp only offers the Fifo family)")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
@@ -141,6 +141,9 @@ def main():
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
                         help="also enable this patch by its exact XML name (repeatable)")
     args = parser.parse_args()
+    args.vblank = args.fps if args.vblank is None else args.vblank
+    if not 30 <= args.vblank <= 1000:
+        parser.error("--vblank must be between 30 and 1000 Hz.")
     args.fullscreen = not args.windowed
     emulator = ENGINES[args.engine]
     if args.engine == "nightly" and not emulator.is_file():
@@ -152,6 +155,8 @@ def main():
                                                      args.keep_facegen))
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
+                          "vblank_hz": args.vblank, "present_mode_requested": args.present_mode,
+                          "fullscreen_mode": args.fullscreen_mode if args.fullscreen else "windowed",
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
                           "profile_dir": str(PATCH_DIR), "local_files_present": True,
                           "gameplay_verified": False}, indent=2))
@@ -163,7 +168,8 @@ def main():
     logs = RUNTIME / "sessions"
     logs.mkdir(exist_ok=True)
     log = logs / f"{stamp}-{args.resolution}-{args.fps}-perf{args.perf}-{args.engine}.log"
-    print(f"Launching {args.engine} engine: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
+    print(f"Launching {args.engine} engine: {args.resolution}, target {args.fps} FPS, "
+          f"vblank {args.vblank} Hz, perf level {args.perf}, "
           f"patches: {', '.join(patches)}", flush=True)
     print(f"Log: {log}", flush=True)
     env = dict(os.environ)

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.1.0
+Version:     v2.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      7edefa0034f6b353bd690ae8c1da9b2febf909f3987e17b403355567d7d5ad6c
+SHA256:      ed02f0b233a027a4f86cff20bd391eec453a6cb9d554dfc6da62f81b8a0356cf
 Chain:       solana-mainnet
-Tx:          3Z9kNs4bwsDEJ7wziRhnnQVuFpq2vE5nQxZeUitBwTJRqQLuu1jtVA7n6xqrJr8koacyQYgkGrToZsyHQMx7S8J7
+Tx:          27dikB44zEJA5mQ6V6tfaZXVX6X43mCusVCkarockFs9PT2Rc8CNFGrJAJGXymELYvX9YZBBsJSK42UudEMFnbez
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -59,6 +59,75 @@ Later that day:
 I removed the 900p resolution patch. Those recordings include travel and
 loading, so I do not use their whole-run averages as a boss-only benchmark.
 The recorder could not see the scene or detect my death.
+
+## October 13: repeat tests beat wishful thinking
+
+My first frame-by-frame test used the Central Yharnam lamp, facing the arched
+door. I kept the character still. All four runs used the same local Release build,
+1080p game image, 60 FPS++ patch, perf 3, and disabled Facegen. The window was
+1280×720 logical pixels. Mailbox was requested; the driver used Fifo.
+
+I changed only the emulated vblank rate between these runs. This controls
+part of the emulator's frame timing. It is separate from the game's FPS cap.
+
+| Run / vblank rate | Frames | Time | Average FPS | 1% low FPS | Slow-frame time (p99) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| First / 60 Hz | 2,148 | 59.95 s | 35.83 | 21.27 | 33.52 ms |
+| First / 120 Hz | 2,718 | 59.98 s | 45.32 | 29.94 | 33.32 ms |
+| Repeat / 120 Hz | 2,538 | 59.99 s | 42.31 | 20.91 | 41.69 ms |
+| Return to 60 Hz | 2,549 | 59.95 s | 42.52 | 25.12 | 33.43 ms |
+
+The first pair looked 26.5% faster at 120 Hz. The repeat did **not** back that up:
+60 Hz and 120 Hz both averaged about 42 FPS. I am not claiming a vblank speedup
+or changing the default. These ran on my active Mac; background load was not
+held constant. Movement, game speed, sound, and combat also need checks.
+The shared frame logger still needs an overhead check.
+The [capture guide](docs/FRAME-CAPTURE.md) explains how I count frames and lows.
+
+Two other trials did not earn a place in that table:
+
+- A build with ThinLTO compiled and linked, then stalled before the game started.
+  I rejected it and went back to the working Release build.
+- A 90 FPS++ / 240 Hz trial reached gameplay, but the camera, character position,
+  and window size changed during the capture. I kept the raw recording private
+  and excluded it from the matching-scene comparison.
+
+My 1080p / 60 cap / perf 3 working profile is still intact. A 90 FPS menu,
+a higher cap, or one fast view does not meet my 90+ FPS gameplay goal.
+
+The launcher's `--check` output now includes the requested vblank rate, window
+mode, and present mode. A `null` present-mode request means to keep the current
+setting; it does not mean the driver chose that mode. Vblank values outside
+30–1000 Hz fail before any settings change. These checks do not run the game.
+
+## A small buffer-pool bug
+
+I found a stale GPU-progress check in shadPS4's command buffer pool. Even after
+asking the GPU for fresh progress, the pool searched with the old value. It
+could grow the pool when a ready buffer was waiting to be reused.
+
+The [optional fix](patches/shadps4/resource-pool-refresh.patch) makes that search
+use the refreshed value. A small check runs the real pool code with a test
+clock. The old code fails both refresh cases. The fixed code passes all five
+cases, including growing the pool when every buffer is still busy.
+
+I built the fix and ran the same lamp view at 1080p, 60 cap, perf 3, and vblank
+120. Across 2,482 frames in 59.97 seconds, it averaged **41.39 FPS**, with a
+**23.94 FPS 1% low** and **41.73 ms p99 frame time**. That is near the repeated
+baseline, so I do **not** claim an FPS gain. Walking and turning the camera
+worked in a short check on a copied save. Combat, sound, and game speed still
+need longer tests. See the [capture guide](docs/FRAME-CAPTURE.md) to try it.
+
+## Fewer effects, higher cap
+
+I also tried the original test build at 1080p with a 120 FPS++ cap, vblank 240,
+and perf 7. That removes dynamic light shadows, SSAO, depth of field, and bloom
+on top of the usual perf-3 changes. The picture changes, so this is a separate
+quality tradeoff. It also changes three settings together.
+
+The same still lamp view averaged **45.01 FPS** over 2,699 frames in 59.97
+seconds. Its **1% low was 25.28 FPS** and **p99 frame time was 33.48 ms**. This
+trial did not reach 90 FPS. I left the normal profile at perf 3.
 
 ## What the code does, and where the time goes
 

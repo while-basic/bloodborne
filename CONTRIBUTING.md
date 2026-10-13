@@ -1,12 +1,12 @@
 ```text
 Document:    Contributing to Bloodborne on Mac
-Version:     v1.3.0
+Version:     v1.3.1
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      84193a81887c05c06804f985b6065329719b2e5cd5924cc47f4a6c99dcf2d06b
+SHA256:      53bc35e81f81f9728dfe6012ced8d11f1567b1965791f138361dab0977b2dcd7
 Chain:       solana-mainnet
-Tx:          2unyrLdw4PcUvunL8taqPAkfDbhPjzjRUfdPGpLE9r7uaTsuqYm5uNyfbGNGTjzv1DzextEDTv2pxxfXUZ5jdk4E
+Tx:          3oqCLPDYV3TXSeXWeMeAdDJhcc8789T4PH4JRHLLKYt9uzDMayLWrzDqzLQozQdiixGeAMz4bMhT8UieWanVYn6S
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -39,7 +39,7 @@ Run these locally with Python 3.11 or newer:
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 -m py_compile play.py profile_runtime.py analyze_frames.py
+python3 -m py_compile play.py profile_runtime.py analyze_frames.py check_resource_pool.py
 python3 play.py --help
 python3 analyze_frames.py --help
 git diff --check
@@ -54,6 +54,10 @@ I run checks locally. Please don't add GitHub Actions workflows.
 For frame measurements, see [my capture guide](docs/FRAME-CAPTURE.md).
 Use an observed gameplay interval and keep raw captures private. The analyzer
 does not know whether a frame came from a menu or a fight.
+
+For changes to the optional buffer-reuse patch, also run
+`python3 check_resource_pool.py /path/to/shadPS4` with the patch applied to
+the pinned source. That needs a C++20 compiler, but no game or GPU test.
 
 Before pushing, check the files you're committing and the Git history for game
 data, binaries, credentials, and private logs. Ignore rules won't remove

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Frame Capture Guide
-Version:     v1.0.0
+Version:     v1.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      73d662fb2d3528e92425ea92d674f4c2d025139c8f06f672e7ab3681b1e96ac2
+SHA256:      d1d4a41f8562b87e0f3f046979b2252264ff7c8fd45b5d58303a5fbe9cf73a86
 Chain:       solana-mainnet
-Tx:          49miAzJDXvzpuh89cVeyvoTGXWZ9Fo9YZQvfHmo4mDCDkfQGWVr6Ep1Ccyi5NxLJy1CJ6wgnKR1gqin1bXhkcSSs
+Tx:          27GTo6pzzF3Dbo1HvEJnXvmRXvnqB2PgpzW3U8xUE6aY4GkKDeWcWx4Ls9b6BzBqQSqh6bL5hNpkhN3Rp1fWDFr5
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -88,9 +88,39 @@ the logger's overhead against an unmodified build. Keep power mode, display,
 scene, camera, cache, driver, and patches fixed. Repeat runs and keep raw data
 under ignored `runtime/` folders. Do not upload saves or logs.
 
+## Optional buffer-reuse fix
+
+I found a small bug in the same pinned emulator source. Its buffer pool checks
+an old copy of the GPU's progress even after asking for a fresh value. That can
+make it create extra command buffers when a ready one could be reused.
+
+The [reuse patch](../patches/shadps4/resource-pool-refresh.patch) fixes that
+check. It is separate from the frame logger. It is not a 90 FPS patch.
+
+From the shadPS4 source checkout, before building:
+
+```sh
+git apply --check /path/to/bloodborne/patches/shadps4/resource-pool-refresh.patch
+git apply /path/to/bloodborne/patches/shadps4/resource-pool-refresh.patch
+```
+
+From this launcher repo, run the small code check with a C++20 compiler:
+
+```sh
+python3 check_resource_pool.py /path/to/shadPS4
+```
+
+This compiles the actual pool class and methods from that trusted checkout.
+A small test clock stands in for GPU progress. The old source fails two reuse
+cases; the patched source passes all five checks. It also checks that a busy
+pool still grows. It does not launch a game or prove an FPS gain. Temporary
+test programs are removed when the check ends.
+
+Build and compare the game separately, using the same scene and settings.
+
 ## License
 
-The emulator patch changes shadPS4 and follows its **GPL-2.0-or-later** terms.
+The emulator patches change shadPS4 and follow its **GPL-2.0-or-later** terms.
 It is not covered by this repo's Unlicense dedication. My analyzer and this
 guide are original work under the Unlicense. Keep shadPS4's credits and license
 when sharing any modified emulator build.

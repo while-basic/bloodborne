@@ -59,10 +59,49 @@ class DryRunTests(unittest.TestCase):
         self.assertTrue(result["local_files_present"])
         self.assertFalse(result["gameplay_verified"])
         self.assertEqual(result["fps_target"], 60)
+        self.assertEqual(result["vblank_hz"], 60)
         self.assertEqual(before, self.snapshot())
         self.assertFalse(self.profile.exists())
         run.assert_not_called()
         launch.assert_not_called()
+
+    def test_check_reports_timing_request_without_applying_it(self):
+        before = self.snapshot()
+        output = io.StringIO()
+        with patch("sys.argv", ["play.py", "--check", "--vblank", "120",
+                                "--present-mode", "Fifo", "--windowed"]), \
+                patch.object(play.subprocess, "run") as run, \
+                patch.object(play.subprocess, "call") as launch, \
+                contextlib.redirect_stdout(output):
+            self.assertEqual(play.main(), 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["fps_target"], 60)
+        self.assertEqual(result["vblank_hz"], 120)
+        self.assertEqual(result["present_mode_requested"], "Fifo")
+        self.assertEqual(result["fullscreen_mode"], "windowed")
+        self.assertFalse(result["gameplay_verified"])
+        self.assertEqual(before, self.snapshot())
+        run.assert_not_called()
+        launch.assert_not_called()
+
+    def test_invalid_vblank_fails_before_reading_or_writing_settings(self):
+        for rate in ("-1", "0", "29", "1001", "4294967296"):
+            with self.subTest(rate=rate):
+                before = self.snapshot()
+                errors = io.StringIO()
+                with patch("sys.argv", ["play.py", "--vblank", rate]), \
+                        patch.object(play, "make_profile") as profile, \
+                        patch.object(play, "write_config") as config, \
+                        patch.object(play.subprocess, "run") as run, \
+                        contextlib.redirect_stderr(errors), \
+                        self.assertRaises(SystemExit) as raised:
+                    play.main()
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("--vblank must be between 30 and 1000", errors.getvalue())
+                self.assertEqual(before, self.snapshot())
+                profile.assert_not_called()
+                config.assert_not_called()
+                run.assert_not_called()
 
     def test_missing_game_fails_without_claiming_success(self):
         self.game.unlink()

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.1.0
+Version:     v2.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      625a0e7eed994216a36dda680f44e96bcb5d7e91bd059a99ce55e85c1572588e
+SHA256:      61b599482236d205ac065994b30fd9e694d7da93ac8f10aa308af24392c69316
 Chain:       solana-mainnet
-Tx:          2tVi28cTCb7aiux8NuCdzNZen2w2vHYqWzg2dvJy3MAVPFqYnFKYiujatxvKhVaGiu1evTCQ5HhVCe2qoiVH3iG
+Tx:          62nrZgbFhkrAMzQU7h9VgABXJXksUCGvbzeNYFZhRqAG6hqiz5TNJJjSD4PFJnX9pp2ci8megewZHbxFAHboeD9V
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,13 +74,19 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Public docs and the PS4-to-Mac guide are on main in 722e36a.
-Added the optional GPL shadPS4 frame logger, original timing analyzer, and
-capture guide, published in 09460f4. Seven local tests pass; the instrumented Release build launches
-and reaches gameplay with copied saves. Steady 90+ FPS is still unverified.
-All measurements and emulator builds remain private under runtime/. The private
-emulator experiment is saved in 30314d3. Patch context whitespace is checked
-by git apply; .gitattributes keeps its required context spaces intact.
+2026-10-13: Shared the guides, frame tools, and an optional buffer-reuse fix.
+Nine Python tests and five pool checks pass. Repeated lamp tests did not show
+a vblank gain; fewer effects also missed 90 FPS. My working profile is intact.
+
+## Tests still open
+
+Steady 90+ FPS remains a goal. Measure logger overhead, repeat the same busy
+route, and check combat, sound, game speed, and picture quality. The buffer fix
+passes its code check and a short movement check, but has no proven FPS gain.
+ThinLTO stalled at startup, and the first 90-cap capture changed scenes; do not
+promote either result. Keep raw captures and experiment state under ignored
+runtime/. Patch files keep their needed context spaces through .gitattributes;
+check them with git apply before sharing.
 
 <!-- graft:start -->
 ## Graft — repo context graph
