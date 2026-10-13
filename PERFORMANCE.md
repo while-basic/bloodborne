@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.2.0
+Version:     v2.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      ed02f0b233a027a4f86cff20bd391eec453a6cb9d554dfc6da62f81b8a0356cf
+SHA256:      9850501e8966220329fe7e3c084616d301dda7f4166d8e87dd0e8a09de434d89
 Chain:       solana-mainnet
-Tx:          27dikB44zEJA5mQ6V6tfaZXVX6X43mCusVCkarockFs9PT2Rc8CNFGrJAJGXymELYvX9YZBBsJSK42UudEMFnbez
+Tx:          4yamfmzpSUm6yZbuPfY68LAw8mzYbzdtNmo4e7zgSszfwmNP5EWyW8xEaorGCrqnaTmp6wtBmvvbCaC3wXrr16hH
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -128,6 +128,54 @@ quality tradeoff. It also changes three settings together.
 The same still lamp view averaged **45.01 FPS** over 2,699 frames in 59.97
 seconds. Its **1% low was 25.28 FPS** and **p99 frame time was 33.48 ms**. This
 trial did not reach 90 FPS. I left the normal profile at perf 3.
+
+## A buffer-write experiment
+
+I tried widening a memory check for buffers to an aligned 16 KiB range. I kept
+texture checks at their original size. The
+[optional patch](patches/shadps4/buffer-write-window.patch) is off by default.
+It checks that the whole range is mapped before widening anything.
+
+These are three separate 60-second captures at the same Central Yharnam lamp,
+facing the arched door. I kept 1080p, the 60 FPS++ cap, perf 3, vblank 120, and
+the window size fixed. Each run used a fresh copy of the same starting save.
+
+| Buffer experiment | Frames | Measured time | Average FPS | 1% low | p99 frame time | Worst frame |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| On, first run | 3,251 | 59.96 s | 54.22 | 28.67 | 33.21 ms | 47.91 ms |
+| Off, same executable code | 2,277 | 59.98 s | 37.96 | 23.74 | 41.68 ms | 50.02 ms |
+| On, repeat | 3,136 | 59.98 s | 52.29 | 23.97 | 33.37 ms | 141.44 ms |
+
+The last two runs used the same command-line launch method. I checked the code
+hash and the setting in each running process. The first run used the app bundle
+launcher. Background work on my Mac was not held constant.
+
+This is a promising gain in the average for this view. The repeat still had four
+frames over 50 ms, including a 141 ms hitch. Its 1% low barely changed. It is
+**not** a steady 90 FPS result, and this test still had a 60 FPS cap.
+
+Ten checks pass against the actual changed methods. They cover mapped ranges,
+gaps, address overflow, the off setting, and the unchanged texture range. I also
+walked and turned the camera after the first capture. Those short checks looked
+intact. They do not settle thread safety, busy routes, combat, sound, or game
+speed. My normal 1080p profile is unchanged. The
+[capture guide](docs/FRAME-CAPTURE.md#optional-buffer-write-experiment) explains
+how to compare the patch with copied saves.
+
+## Other paths I checked
+
+- Exclusive fullscreen with the pool fix averaged **44.77 FPS**, with a
+  **29.34 FPS 1% low**. I did not verify macOS Game Mode, so this is not a
+  Game Mode result.
+- Widening both buffer and texture checks averaged **38.88 FPS**. I rejected
+  that broad version. It is not the patch shared above.
+- Releasing a queue lock earlier averaged **42.37 FPS**. It showed no clear
+  gain. A separate timing probe put the measured CPU submission steps below
+  1% of each scheduler's time window. That does not measure GPU execution.
+
+Each frame result above comes from a separate, still lamp-view capture of about
+60 seconds at 1080p / cap 60 / perf 3 / vblank 120. These tests help narrow the
+search. They do not replace a repeated busy gameplay route.
 
 ## What the code does, and where the time goes
 

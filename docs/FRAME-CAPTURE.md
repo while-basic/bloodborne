@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Frame Capture Guide
-Version:     v1.1.0
+Version:     v1.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      d1d4a41f8562b87e0f3f046979b2252264ff7c8fd45b5d58303a5fbe9cf73a86
+SHA256:      93c3e756dc5370b6eef054854666f0b951bedcf72e2140102a9a1530f7288039
 Chain:       solana-mainnet
-Tx:          27GTo6pzzF3Dbo1HvEJnXvmRXvnqB2PgpzW3U8xUE6aY4GkKDeWcWx4Ls9b6BzBqQSqh6bL5hNpkhN3Rp1fWDFr5
+Tx:          5E4KV7oDQZhNdjEDGgP24yBxpG2nandeJJhSWzwRQJPuetKYiRMstDU1RvSXFXXneSygdksHbsLxvrtQfKBVQEYN
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -118,9 +118,52 @@ test programs are removed when the check ends.
 
 Build and compare the game separately, using the same scene and settings.
 
+## Optional buffer-write experiment
+
+I am testing a separate
+[memory-tracking patch](../patches/shadps4/buffer-write-window.patch) on my M5 Max.
+On a write fault, it can mark an aligned 16 KiB group of buffer memory as changed.
+It only widens the check when the whole group is mapped. Texture checks keep
+their original range. The feature is **off by default**.
+
+Use the same pinned source and a separate copy of your settings and saves.
+Ask permission before the load test. Apply the patch before building:
+
+```sh
+git apply --check /path/to/bloodborne/patches/shadps4/buffer-write-window.patch
+git apply /path/to/bloodborne/patches/shadps4/buffer-write-window.patch
+```
+
+From this launcher repo, check the changed methods:
+
+```sh
+python3 check_buffer_faults.py /path/to/shadPS4
+```
+
+This needs a C++20 compiler and shadPS4's Boost submodule. It checks ten cases,
+including gaps in mapped memory, address overflow, and the unchanged texture
+range. It does not test thread safety, combat, or FPS.
+
+After building, run the same copied save twice. Keep every setting fixed and
+choose a new frame log each time. Run these from your private test folder:
+
+```sh
+# Control: ordinary buffer tracking.
+SHADPS4_WRITE_FAULT_WINDOW_16K=0 SHADPS4_FRAME_LOG="$PWD/control.csv" \
+  /path/to/patched/shadps4 --show-fps --game /path/to/my/game/eboot.bin
+
+# Experiment: widen buffer write tracking only.
+SHADPS4_WRITE_FAULT_WINDOW_16K=1 SHADPS4_FRAME_LOG="$PWD/experiment.csv" \
+  /path/to/patched/shadps4 --show-fps --game /path/to/my/game/eboot.bin
+```
+
+Leaving the first variable unset also keeps ordinary tracking. My results and
+their limits are in [the performance notes](../PERFORMANCE.md). This experiment
+does not change the normal launcher profile or meet the 90+ FPS goal.
+
 ## License
 
 The emulator patches change shadPS4 and follow its **GPL-2.0-or-later** terms.
-It is not covered by this repo's Unlicense dedication. My analyzer and this
+They are not covered by this repo's Unlicense dedication. My analyzer and this
 guide are original work under the Unlicense. Keep shadPS4's credits and license
 when sharing any modified emulator build.

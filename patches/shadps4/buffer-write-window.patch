@@ -1,0 +1,78 @@
+diff --git a/src/video_core/page_manager.cpp b/src/video_core/page_manager.cpp
+index c8e463c..03dd6a4 100644
+--- a/src/video_core/page_manager.cpp
++++ b/src/video_core/page_manager.cpp
+@@ -2,6 +2,8 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include <algorithm>
++#include <cstdlib>
++#include <cstring>
+ #include <utility>
+ #include "common/adaptive_mutex.h"
+ #include "common/assert.h"
+@@ -413,8 +415,12 @@ public:
+ #endif // __linux__
+ 
+ struct SignalImpl : public PageManager::Impl {
++    inline static bool widen_write_faults{};
++
+     SignalImpl(Vulkan::Rasterizer* rasterizer_) : Impl() {
+         rasterizer = rasterizer_;
++        const char* wide_faults = std::getenv("SHADPS4_WRITE_FAULT_WINDOW_16K");
++        widen_write_faults = wide_faults && std::strcmp(wide_faults, "1") == 0;
+ 
+         // Should be called first.
+         constexpr auto priority = std::numeric_limits<u32>::min();
+@@ -437,7 +443,7 @@ struct SignalImpl : public PageManager::Impl {
+         const auto is_gpu_thread =
+             std::this_thread::get_id() == rasterizer->GetGpuCommandProcessorThread();
+         if (Common::IsWriteError(context)) {
+-            return rasterizer->InvalidateMemory(addr, size, is_gpu_thread);
++            return rasterizer->InvalidateMemory(addr, size, is_gpu_thread, widen_write_faults);
+         } else {
+             return rasterizer->ReadMemory(addr, size, is_gpu_thread);
+         }
+diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
+index 6a1a4a5..a34b7bc 100644
+--- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
++++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
+@@ -1254,12 +1254,22 @@ u32 Rasterizer::ReadDataFromGds(u32 gds_offset) {
+     return value;
+ }
+ 
+-bool Rasterizer::InvalidateMemory(VAddr addr, u64 size, bool assume_locks) {
++bool Rasterizer::InvalidateMemory(VAddr addr, u64 size, bool assume_locks, bool widen_buffer_fault) {
+     if (!IsMapped(addr, size)) {
+         // Not GPU mapped memory, can skip invalidation logic entirely.
+         return false;
+     }
+-    buffer_cache.InvalidateMemory(addr, size, assume_locks);
++    VAddr buffer_addr = addr;
++    u64 buffer_size = size;
++    if (widen_buffer_fault) {
++        constexpr u64 window_size = 16 * 1024;
++        const VAddr window_start = addr & ~(window_size - 1);
++        if (IsMapped(window_start, window_size)) {
++            buffer_addr = window_start;
++            buffer_size = window_size;
++        }
++    }
++    buffer_cache.InvalidateMemory(buffer_addr, buffer_size, assume_locks);
+     texture_cache.InvalidateMemory(addr, size);
+     return true;
+ }
+diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.h b/src/video_core/renderer_vulkan/vk_rasterizer.h
+index e01715c..9cb5625 100644
+--- a/src/video_core/renderer_vulkan/vk_rasterizer.h
++++ b/src/video_core/renderer_vulkan/vk_rasterizer.h
+@@ -72,7 +72,8 @@ public:
+     void FillBuffer(VAddr address, u32 num_bytes, u32 value, bool is_gds);
+     void CopyBuffer(VAddr dst, VAddr src, u32 num_bytes, bool dst_gds, bool src_gds);
+     u32 ReadDataFromGds(u32 gsd_offset);
+-    bool InvalidateMemory(VAddr addr, u64 size, bool assume_locks = false);
++    bool InvalidateMemory(VAddr addr, u64 size, bool assume_locks = false,
++                          bool widen_buffer_fault = false);
+     bool ReadMemory(VAddr addr, u64 size, bool assume_locks = false);
+     bool IsMapped(VAddr addr, u64 size);
+     void MapMemory(VAddr addr, u64 size);

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.2.0
+Version:     v2.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      61b599482236d205ac065994b30fd9e694d7da93ac8f10aa308af24392c69316
+SHA256:      ae4036114e894ddbe2a067405c7bf53d53d955364fc2a0da7c4a23fa73f4fea6
 Chain:       solana-mainnet
-Tx:          62nrZgbFhkrAMzQU7h9VgABXJXksUCGvbzeNYFZhRqAG6hqiz5TNJJjSD4PFJnX9pp2ci8megewZHbxFAHboeD9V
+Tx:          3Nii8czYPttiJGVC7c2tLx7HKXxpvKC2qETHM4itNyxMZvtfUwYPC6Kqf7eydrVCZnrz2wjk9iPWWm5kd6EV2Xj4
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,15 +74,17 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Shared the guides, frame tools, and an optional buffer-reuse fix.
-Nine Python tests and five pool checks pass. Repeated lamp tests did not show
-a vblank gain; fewer effects also missed 90 FPS. My working profile is intact.
+2026-10-13: Added an optional buffer-write patch and ten boundary checks. The
+same-code lamp comparison averaged 37.96 FPS off and 52.29 FPS on; lows stayed
+near 24 FPS and one hitch reached 141 ms. My normal profile stays unchanged.
 
 ## Tests still open
 
 Steady 90+ FPS remains a goal. Measure logger overhead, repeat the same busy
-route, and check combat, sound, game speed, and picture quality. The buffer fix
-passes its code check and a short movement check, but has no proven FPS gain.
+route, and check combat, sound, game speed, and picture quality. The buffer-pool
+fix has no proven FPS gain. The separate buffer-write experiment improved the
+average in one still view, but its lows and hitch still need work. Keep it off
+by default. A private renderer timing build is ready for the next investigation.
 ThinLTO stalled at startup, and the first 90-cap capture changed scenes; do not
 promote either result. Keep raw captures and experiment state under ignored
 runtime/. Patch files keep their needed context spaces through .gitattributes;
