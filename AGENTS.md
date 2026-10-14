@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.12.0
+Version:     v2.13.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      05dc6062af0ae532233338fd8d645009e6c39824f672dd9b28b2038ba4d25513
+SHA256:      5104653a2f69c1120f16081df37502785590e9a98a1903d9884b9b2cbca91a41
 Chain:       solana-mainnet
-Tx:          5GsMmjuYP9nVQ4KP2pNJf5ozADmZfnkaxqy9aCajCd4FLFkLHbxcxUEpEH3t6qysv5XXhDkQkuEcKmVQcWf6PuLo
+Tx:          24z7cHuA5eirV9zhEBeyK6NC59WdHuZ3ERCA4UMbXVhVRRXvEDrHXEG8vHzcZKMJtPKuq3Pe3dALFTwNHvmN9UDo
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -80,7 +80,9 @@ The retry produced 13,459 error-free GPU rows; its short automated route had
 0.31 ms mean and 1.63 ms maximum GPU command residence after load. That is a
 diagnostic lead, not a gameplay result or a 90+ FPS claim. All test apps are
 closed, all 16 original saves and current settings match, and 90+ FPS remains
-unverified.
+unverified. I also tried `Immediate` present mode on the same automated route:
+about 103 FPS versus about 101 FPS with the prior setting. I kept the public
+default unchanged because this route is not a busy gameplay scene.
 
 ## Resume from here
 

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.12.0
+Version:     v2.13.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      119a811adf6eaa93316b4e99f1a5927648ad7fdc066185e2a25bccf78c324cd7
+SHA256:      8c5ae976eb121ec7dee7b5ae14ef6d771d7a9469f155f8b2b2b4d9eb2f252657
 Chain:       solana-mainnet
-Tx:          3JvQZhYVZpMAxdU4UMaYNe1SpCeZV37Aonw9SzasUScN5BMkbatFzL9JcSRvkeMt7hLdhTkjEbaEcp5Fue82snhf
+Tx:          4LFZutmvYj9CMdBfMpM5pMXukUtF8cNg2GKjxqPYbYV84nHofXv34PsNiJ85iENLU9aYfCaNCfvbKVv9UHiAeQ2V
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -27,6 +27,11 @@ with a 1.07 ms 95th percentile and a 1.63 ms maximum. This automated route is
 diagnostic evidence only: it does not show a busy fight, prove a frame-rate
 floor, or justify a GPU optimization. The next code lead is CPU and Rosetta
 work around the frame path, while the working 1080p profile stays unchanged.
+
+I also tried `Immediate` present mode in a matching automated route. It averaged
+about 103 FPS, compared with about 101 FPS in the prior route. That small change
+is not a gameplay result and may trade away tear-free presentation, so I left
+the public default alone.
 
 My current baseline is **1080p / 60 FPS target / perf 3**. After a rough 900p
 boss attempt, I went back to this setup and called the next run “very good.”
