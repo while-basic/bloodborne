@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      816afae6a822992f3c2717bcff4f20686681f511022bacdb163cb5ed8b814a73
+SHA256:      3cd1cea8364a2fa8b73062967792897182512e7dca73c2b7f6db3609ff7735a4
 Chain:       solana-mainnet
-Tx:          5HPGwDFCcCy8rkVmfkmMxBiapkdkiJuFufiV8pqVgNArTGHtPdsBdWfDHHy3HTaRJBVane5E6xerCs1Uv3gDosCm
+Tx:          3b2vCXBgFFKJhpRqEGYUmMySFRveHsnvgkZEBxsosSxKqFqNoFAV11Yr3nAAqhP6ev6JEVTghF292C4nRwAVPsfD
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -194,3 +194,7 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+## Completion note
+
+2026-10-13: I stopped the private GPU timing trial cleanly and confirmed no emulator process remains. The public 1080p baseline is unchanged; 90+ FPS gameplay is still unverified. The next session can resume from the documented profiling boundary without touching the external SSD.
