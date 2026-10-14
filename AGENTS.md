@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.13.0
+Version:     v2.14.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      5104653a2f69c1120f16081df37502785590e9a98a1903d9884b9b2cbca91a41
+SHA256:      6270e010775e7962d4e76a70e7de3c4af6ccb4ecb027dc77b6a397c66257f6ab
 Chain:       solana-mainnet
-Tx:          24z7cHuA5eirV9zhEBeyK6NC59WdHuZ3ERCA4UMbXVhVRRXvEDrHXEG8vHzcZKMJtPKuq3Pe3dALFTwNHvmN9UDo
+Tx:          cHPTQvQ1uzFjuiMNPtEtZj5kmjV8wyjytEoitMhrtcciGZH5wwS3P9HUfySsd6F47rnG9p3zB681k9cMjVDybSU
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -83,6 +83,9 @@ closed, all 16 original saves and current settings match, and 90+ FPS remains
 unverified. I also tried `Immediate` present mode on the same automated route:
 about 103 FPS versus about 101 FPS with the prior setting. I kept the public
 default unchanged because this route is not a busy gameplay scene.
+The CPU recorder still points at `GpuCommandProcessor` and `Game:Main`, not the
+present thread. A five-second macOS `sample` attempt on the Rosetta process
+exited without a stack file, so I made no function-level CPU change.
 
 ## Resume from here
 

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.13.0
+Version:     v2.14.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      8c5ae976eb121ec7dee7b5ae14ef6d771d7a9469f155f8b2b2b4d9eb2f252657
+SHA256:      44118fac388f977ded3479ef89b9b5a2cbf1be9786293dd2cbdd2faf202b0cce
 Chain:       solana-mainnet
-Tx:          4LFZutmvYj9CMdBfMpM5pMXukUtF8cNg2GKjxqPYbYV84nHofXv34PsNiJ85iENLU9aYfCaNCfvbKVv9UHiAeQ2V
+Tx:          2na1eWMKvS3PtngoJUsZuUFjjJEcmXkaPN8UvByNc3zAeXT7b7H7hPtH7VksPJx88crrF1YrX5tQch37KuuvA18u
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -32,6 +32,12 @@ I also tried `Immediate` present mode in a matching automated route. It averaged
 about 103 FPS, compared with about 101 FPS in the prior route. That small change
 is not a gameplay result and may trade away tear-free presentation, so I left
 the public default alone.
+
+The existing activity captures put the heavy work on `GpuCommandProcessor` and
+`Game:Main`; the present thread is a small share of the sampled CPU time. A
+five-second macOS `sample` run against the Rosetta process exited without
+writing a stack file. I therefore have no safe function-level CPU edit to
+claim, and I kept the 1080p profile unchanged.
 
 My current baseline is **1080p / 60 FPS target / perf 3**. After a rough 900p
 boss attempt, I went back to this setup and called the next run “very good.”
