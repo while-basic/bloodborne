@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      d345ca55750802ab2e31c0500661b36206e6276b488ae8fbdd2e043f98bdb928
+SHA256:      b5702ebda1e28c3785bfa0475cd16f62fc50edd8eb5f4ab2967f32c6323ad3a5
 Chain:       solana-mainnet
-Tx:          ighPdMZK8gkZTxTQLXpJeK74VheWbmWtcRxyDxHkc4JJUFpakCWUDcKzWdwy4rCM8EMTHr2SQNamLVKzjQfTgMz
+Tx:          3nZxKrkVc6wRNCrGQ2zQ1PfF4B7wsSqGiTKJFv5uMzonRiAEc3pBB1o9yM8PQfcAkxfhP5jvB2zchnMGqtDBcT5Z
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -200,3 +200,5 @@ no API key, $0).
 2026-10-13: I stopped the private GPU timing trial cleanly and confirmed no emulator process remains. The public 1080p baseline is unchanged; 90+ FPS gameplay is still unverified. The next session can resume from the documented profiling boundary without touching the external SSD.
 
 2026-10-13: I checked the current shadPS4 upstream tip in an isolated checkout. It had no measured renderer speed change; the result is recorded in PERFORMANCE.md.
+
+2026-10-13: I made Vulkan core validation opt-in for play after a private title-route comparison. The measured gain is diagnostic only; real gameplay still needs a matching route.
