@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.11.0
+Version:     v2.12.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      e1f1a9c9ec229da5b0313aa9bdf817a3725e14ed4a0bd050d616f3c976e16b4b
+SHA256:      119a811adf6eaa93316b4e99f1a5927648ad7fdc066185e2a25bccf78c324cd7
 Chain:       solana-mainnet
-Tx:          5aAETataUNBhFsBZMR6QyzqLvEZkU2xgEhq3FHcAnwdH4VHeiNqYPHAChBKoQUNNfdwt8xfS4cZeTN6adU2ugz2B
+Tx:          3JvQZhYVZpMAxdU4UMaYNe1SpCeZV37Aonw9SzasUScN5BMkbatFzL9JcSRvkeMt7hLdhTkjEbaEcp5Fue82snhf
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -19,6 +19,14 @@ hooks. LaunchServices confused the copied app with an older probe, so I did not
 get a valid GPU capture. I made no GPU change and do not claim a speedup. The
 next useful lead is to repeat the probe with a unique bundle identity, then
 compare the same busy scene against the working 1080p profile.
+
+I then reran the probe with a fresh local save copy and an explicit
+`KK_GPU_TIMING_LOG` path. It wrote 13,459 GPU feedback rows with no reported
+errors. In the short post-load slice, GPU command residence averaged 0.31 ms,
+with a 1.07 ms 95th percentile and a 1.63 ms maximum. This automated route is
+diagnostic evidence only: it does not show a busy fight, prove a frame-rate
+floor, or justify a GPU optimization. The next code lead is CPU and Rosetta
+work around the frame path, while the working 1080p profile stays unchanged.
 
 My current baseline is **1080p / 60 FPS target / perf 3**. After a rough 900p
 boss attempt, I went back to this setup and called the next run “very good.”

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.11.0
+Version:     v2.12.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      649829fe470640df5dd54c02938a19bd822572e364a7aed53542e20728dcab05
-Chain:       solana-devnet
-Tx:          65sW6c2GDGuTUBKxHLkatt7q3NnW6YWWwyi8T6gSTBSy7DSWDENNzqGmhWgUhr1y8ofpJ8iZSDhD7AVMLFGF96DZ
+SHA256:      05dc6062af0ae532233338fd8d645009e6c39824f672dd9b28b2038ba4d25513
+Chain:       solana-mainnet
+Tx:          5GsMmjuYP9nVQ4KP2pNJf5ozADmZfnkaxqy9aCajCd4FLFkLHbxcxUEpEH3t6qysv5XXhDkQkuEcKmVQcWf6PuLo
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,12 +74,13 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: I stopped at a clean checkpoint after publishing the frame-clock
-fix and measuring buffer work. All test apps are closed, all 16 original saves
-and current settings match, and 90+ FPS remains unverified. I prepared a GPU
-feedback probe, but LaunchServices opened an older copy, so I captured no valid
-GPU result and claimed no GPU optimization. The next lead is GPU start/end
-timing with a unique app identity.
+2026-10-14: I stopped at a clean checkpoint after publishing the frame-clock
+fix, measuring buffer work, and rerunning GPU feedback with an explicit log.
+The retry produced 13,459 error-free GPU rows; its short automated route had
+0.31 ms mean and 1.63 ms maximum GPU command residence after load. That is a
+diagnostic lead, not a gameplay result or a 90+ FPS claim. All test apps are
+closed, all 16 original saves and current settings match, and 90+ FPS remains
+unverified.
 
 ## Resume from here
 
