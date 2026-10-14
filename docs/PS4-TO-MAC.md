@@ -1,208 +1,144 @@
 ```text
 Document:    My Bloodborne PS4 to Mac Walkthrough
-Version:     v1.0.0
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      f3deb1c56b8e4414ecae7b608c13cca1e26d21c663331203d32cfa9f3e6819c3
+SHA256:      f56b78cacb1988fe73d6a75b24d04732e139156fc8c3498eff6641995a474f81
 Chain:       solana-mainnet
-Tx:          2RGxEFTkB3gkrF6J2p5uHVZcnAmXRLLdvK1dwku5hRbmXfGVPwh8t6GXd4GWD93DsqdhJvZVgXYx3HfhezaECi2Z
+Tx:          3PM6VCxEEoFN4FuwQM4yhfgvJKY89gNb86uwdMBHevP1bpNMFypKi28ZrTYdHKp7EeoFiMWzfj2A74mkPsdxS5Eh
 License:     The Unlicense (public domain dedication)
 ```
 
 # From my disc to my Mac
 
-I started with a PS4, my Bloodborne disc, and a lot of questions. Codex and
-Claude helped with the Mac work and walked me through the console screens.
-This is the route, with stops to check that each part worked.
+I started with a PS4, my Bloodborne disc, and a pile of questions. Codex and
+Claude helped me with Mac commands and walked me through the PS4 screens. I
+still pressed the buttons and checked what the console showed.
 
-**First move:** open this repo in Codex or Claude and paste the
-[disc-to-Mac prompt](AGENT-INSTALL.md#start-with-my-disc-and-ps4).
-Ask for one step at a time. You do not need to know every term before you start.
+Open this repo in Codex or Claude and paste the [disc-to-Mac prompt](AGENT-INSTALL.md#start-with-my-disc-and-ps4). Ask for one short step at a time. You do not need to know every term before you start.
 
-## 1. Lay the gear on the table
+## 1. Put your gear on the table
 
-I want the agent to ask these questions before choosing a method:
+Before choosing a path, I have the agent ask:
 
-| Question | Why I ask |
+| Question | Why it matters |
 | --- | --- |
-| Which Mac, chip, RAM, and macOS version? | Check the current emulator requirements. |
-| How much space is free on the chosen drive? | Keep room for the game, backup, update, and cache. |
-| What exact PS4 firmware? | Each homebrew method supports specific versions. |
-| Disc or digital copy? Which region and update? | This launcher uses CUSA00900 / 01.09. |
-| Is GoldHEN already working? | Skip work that is already done. |
-| Do you have a spare USB drive? What is on it? | Copying files and erasing a drive are different jobs. |
-| Ethernet cable? USB-C Ethernet adapter? Router? | Pick a network path that fits the gear. |
-| Controller and working data cable? | Check input on both the PS4 and Mac. |
-| Are saves backed up? Which drives are off-limits? | Keep the good stuff safe. |
+| Which Mac, chip, RAM, and macOS version do you have? | I can compare it with current shadPS4 requirements. |
+| How much free space is on the drive I may use? | The game, backup, update, and shader cache need room. |
+| What exact PS4 firmware number is on the console? | A path for 11.00 may not work on 11.02. |
+| Do you have the disc or a digital copy? What region and update? | My patches target CUSA00900 / 01.09. |
+| Is GoldHEN already running? | I can skip steps you finished. |
+| Do you have a spare USB drive? What is on it? | I never assume a drive is empty. |
+| Do you have an Ethernet cable, a USB-C Ethernet adapter, or both? | This decides how the PS4 and Mac can talk. |
+| Which saves, drives, and folders must stay untouched? | I write down the boundary before copying anything. |
 
-On the PS4, read **Settings → System → System Information**. Write down the
-full number. `11.00` and `11.02` are different versions.
+On the PS4, read **Settings → System → System Information** and write down the full firmware number. `11.00` and `11.02` are different.
 
-Before testing the Mac, the agent should ask:
+Before any Mac load test, the agent asks:
 
-> May I run a short local Mac check? I'll read the chip, RAM, OS, free space,
-> and display settings. Before any load test, I'll explain its length and
-> what it runs. It may use more power and raise fan noise. Results stay local.
+> May I run a short local Mac performance check? I will explain what it does, how long it runs, and what it cannot prove. It may use more power and make the fans louder. The result stays on this Mac.
 
-You can say no and keep going with the guide. Specs can rule out missing
-requirements, but no quick CPU test can promise Bloodborne will run well.
-After setup, a short gameplay test gives much better evidence.
+You can say no. Reading the Mac specs is a check. It is not proof that a game will run well. A short, real gameplay route tells me much more.
 
-## 2. Stop the surprise system update
+## 2. Stop a surprise PS4 update
 
-I keep the console off the internet while checking this part.
+I keep the console off the internet while I check this part.
 
-1. Open **Notifications**, then **Downloads** if that view is shown.
-2. Look for a queued **System Software** update. Have the agent help identify
-   that exact item. Do not select Bloodborne's game update.
-3. If a system update is queued, highlight it, press **OPTIONS → Delete**, and
-   check it is gone. This removes the downloaded update; it does not downgrade
-   the firmware already installed.
-4. Open **Settings → System → Automatic Downloads** and clear **System
-   Software Update Files**. Leave unrelated settings alone.
-5. Do not choose System Software Update, Initialize PS4, or a full-system
-   restore as part of this guide.
+1. Open **Notifications**, then **Downloads** if that screen is shown.
+2. Look for a queued **System Software** update. Show the agent the exact item.
+3. Do not select a Bloodborne game update or a save file. If the system update is the item you want gone, ask the agent to explain it first, then highlight it and press **OPTIONS → Delete**.
+4. Open **Settings → System → Automatic Downloads** and clear **System Software Update Files**. Leave other settings alone.
+5. Do not choose **System Software Update**, **Initialize PS4**, or a full restore as part of this guide.
 
-Sony documents the [notification update-file deletion step](https://www.playstation.com/en-ca/support/error-codes/ps4/su-41350-3/).
-I'm using only that cleanup step here, not its later update instructions.
-If an agent can operate the console, it must explain the exact deletion and
-get the required approval first. On my setup, I handled the PS4 buttons.
+Deleting a downloaded update file does not downgrade firmware that is already installed. Sony's [notification support page](https://www.playstation.com/en-ca/support/error-codes/ps4/su-41350-3/) describes the menu. I use only the cleanup step here.
 
-## 3. Pick a firmware path
+## 3. Check the exact firmware path
 
-I checked these primary project guides on **October 13, 2026**. Support can
-change. Have the agent open the current guide and check the exact version,
-required entry point, and matching homebrew payload before running anything.
+Firmware support changes. I checked the linked project READMEs on October 13, 2026. Check them again before you start, and make the agent show you the line that matches your exact firmware.
 
-| Route | What its own guide says | What to check |
+| Project | What its current README says | What I must check |
 | --- | --- | --- |
-| [CSSFontFace + Lapse](https://github.com/ntfargo/CSSFontFace-Exploit) | Full PS4 chain lists 7.00–11.02. | Browser setup and a matching payload. This is the family of loader I used on 11.02. |
-| [PPPwn](https://github.com/TheOfficialFloW/PPPwn) | Exploit covers firmware through 11.00; implemented versions are listed in its README. | Supported exact version, Ethernet, host tools, and matching payload. It does not cover my 11.02 setup. |
-| [Vue After Free](https://github.com/Vuemony/vue-after-free) | Its tested jailbreak range is 7.00–13.00. | Required Vue app/save setup; some install paths erase console data, so do not choose those by default. |
-| [HenLoader LP](https://github.com/GoldHEN/henloader_lp) | Lapse 9.00–12.02; Poops 9.00–13.00. | BD-J disc requirements, Blu-ray activation, and exact payload support. |
+| [CSSFontFace + Lapse](https://github.com/ntfargo/CSSFontFace-Exploit) | The listed PS4 chain is 6.00–11.02. | Browser setup, matching payload, and the exact firmware. This is the family I used on 11.02. |
+| [PPPwn](https://github.com/TheOfficialFloW/PPPwn) | The kernel exploit is for PS4 firmware up to 11.00. | Exact supported version, Ethernet setup, host tool, and payload. It is not my 11.02 path. |
+| [Vue After Free](https://github.com/Vuemony/vue-after-free) | Its README lists a 7.00–13.00 route, with different Lapse and Netctrl ranges. | The required app or save setup, payload, and any data-loss warning. |
+| [HenLoader LP](https://github.com/GoldHEN/henloader_lp) | It is a loader, not a promise that every 13.xx release is jailbroken. | The release notes, payload, and exact firmware support. |
 
-A browser bug working on a firmware is not the same as a full jailbreak
-working on it. For example, the CSSFontFace page lists a wider bug range than
-its working chain. I could verify the routes above through 13.00, **not a
-blanket claim for every 13.xx version**. For newer firmware, stop at this gate
-until a primary project documents a complete supported route. Do not update
-the console just to try to match this table.
+A browser bug range is not the same as a complete jailbreak range. I do not call every 13.xx version supported. I do not update the console just to match a table. If the current primary guide does not show a complete path for the exact version, I stop and keep the firmware where it is.
 
-My local run used a CSSFontFace/Lapse loader with a matching GoldHEN payload.
-I used Ethernet to reach a page hosted on my Mac. That was not PPPwn.
+My local run used CSSFontFace/Lapse on 11.02. I used Ethernet to reach a loader page hosted on my Mac. That was not PPPwn.
 
-## 4. USB or Ethernet? They do different jobs
+## 4. Choose USB or Ethernet
 
-| Gear | What I can use it for |
+They solve different problems:
+
+| Gear | Good use |
 | --- | --- |
-| USB storage drive | Carry a homebrew PKG, a payload when the chosen method needs one, or a game dump. |
-| Ethernet cable | Reach a local loader, send packages, or transfer a game backup. Some methods also use Ethernet for the exploit itself. |
-| USB-C Ethernet adapter | Give the Mac an Ethernet port. It is not a USB storage drive. |
-| Home router | Put both devices on the same local network, when that route fits. |
+| USB storage drive | Carry a homebrew PKG, payload, or game dump when the chosen guide needs it. |
+| Ethernet cable | Reach a local loader and move files on a trusted local link. |
+| USB-C Ethernet adapter | Give a Mac without an Ethernet jack a wired port. It is not USB storage. |
+| Home router | Put both devices on the same local network when the chosen guide allows it. |
 
-I connected **Mac USB-C → Ethernet adapter → Ethernet cable → PS4 LAN port**.
-That direct link kept transfers local. I did not need to erase a storage drive
-just to use Ethernet.
+I used **Mac USB-C → Ethernet adapter → Ethernet cable → PS4 LAN port**. That kept transfers local. I did not format a drive for this cable.
 
-For a direct link, have the agent walk through this:
+For a direct cable, I have the agent walk me through this exact order:
 
-1. Identify the actual Ethernet service on the Mac. Save its current settings.
-   Do not guess an interface name such as `en8`.
-2. Choose a free private subnet that does not overlap Wi-Fi, a VPN, or another
-   active network. My example used `192.168.50.0/24`; yours may need another.
-3. In the Mac's **System Settings → Network → the Ethernet adapter → Details
-   → TCP/IP**, set IPv4 manually. Example: Mac `192.168.50.1`, mask
-   `255.255.255.0`.
-4. On PS4, open **Settings → Network → Set Up Internet Connection → Use a LAN
-   Cable → Custom**. For this direct browser/transfer path, choose a manual
-   address, such as `192.168.50.2`, with the same mask. Set gateway/DNS only
-   as required by the verified local host setup. If using the Mac address for
-   those fields, the agent must explain that it does not create internet or
-   DNS service. Keep MTU automatic and proxy off unless the chosen guide says
-   otherwise. Do not pick PPPoE for this path.
-5. Check the local link. A PS4 internet test may fail on a local-only cable
-   while the Mac and PS4 can still reach each other. Check the actual loader
-   page or service, not just the internet test.
-6. Have the agent start the chosen, reviewed loader on the Mac and give the
-   exact local URL, protocol, and port. Open it in the PS4 browser. Follow
-   that project's steps; do not turn off security checks to hide an error.
-7. Record how to restore the old network settings. Do not enable Internet
-   Sharing or bridge the PS4 onto another network without a separate reason.
+1. Find the real Ethernet service on the Mac and write down its old settings. I do not guess an interface name such as `en8`.
+2. Pick a private subnet that does not overlap Wi-Fi, a VPN, or another active network. My example was `192.168.50.0/24`; yours may differ.
+3. In **System Settings → Network → Ethernet adapter → Details → TCP/IP**, set a manual Mac address. Example: `192.168.50.1`, mask `255.255.255.0`.
+4. On the PS4, choose **Settings → Network → Set Up Internet Connection → Use LAN Cable → Custom**. For a direct local path, use `192.168.50.2` and the same mask. Add a gateway or DNS only when the chosen guide requires it. Keep MTU automatic and proxy off unless that guide says otherwise.
+5. Test the loader page or file service. A PS4 internet test may fail on a local-only cable even when the Mac and PS4 can reach each other.
+6. Have the agent start the chosen, reviewed loader and give me its exact local URL, port, and protocol. I open that URL in the PS4 browser.
+7. Write down how to restore the old Mac and PS4 network settings. I do not turn on Internet Sharing or bridge networks for no reason.
 
-For USB, first identify the drive by name, size, and what it contains. Back it
-up. Use the format required by the chosen tool; many expect exFAT with MBR.
-**Do not format a drive without a clear choice and approval.** A spare drive
-is far cheaper than losing a backup.
+For USB, I first check the drive name, size, and contents. I back up anything important. I use the format the chosen guide requires. I do not format a drive without a clear choice and a backup. A spare drive costs less than losing a good backup.
 
-## 5. Load homebrew, then check it worked
+## 5. Load homebrew and check the result
 
-1. Keep saves backed up. Follow the selected project's exact loader and
-   payload steps for your firmware. Some routes need a USB payload or disc;
-   some browser routes can serve the payload from the Mac.
-2. Wait for the success message and the **GoldHEN** menu on the console.
-   A Mac server saying “listening” only means the server started.
-3. If using network transfer, enable GoldHEN's FTP server and test its actual
-   connection on the PS4's address. GoldHEN documents port **2121**. Keep it
-   on the trusted local link.
-4. If the console crashes, follow the selected tool's recovery steps. After
-   a full restart, expect to load GoldHEN again. Do not treat it as a permanent
-   firmware install.
+1. Keep saves backed up. Follow the selected project's exact loader and payload steps for the firmware I checked.
+2. Wait for the **GoldHEN** menu on the console. A Mac server that says “listening” only proves that the server started.
+3. If I use a network transfer, enable GoldHEN's FTP server and test the real PS4 address on the trusted local link. GoldHEN documents port `2121`.
+4. If the console restarts, I expect to load GoldHEN again. I do not treat this as a permanent firmware change.
 
-See [GoldHEN's own feature list](https://github.com/GoldHEN/GoldHEN) for its
-package installer and FTP support. The homebrew package comes **after** this
-step; installing a random PKG is not a way to jailbreak a stock PS4.
+The homebrew package comes after the loader works. Installing a random PKG is not a jailbreak for a stock PS4. I use the [GoldHEN project](https://github.com/GoldHEN/GoldHEN) and the selected app's own guide.
 
 ## 6. Install the homebrew app
 
-I used tools such as [Itemzflow](https://github.com/LightningMods/Itemzflow)
-for the game-backup workflow. Get a PS4 release through the maintainer's links.
-Check the package name and any published hash before copying it.
+I used [Itemzflow](https://github.com/LightningMods/Itemzflow) for my game-backup workflow. I get releases from the maintainer's links and check the package name and hash when one is provided.
 
-1. **USB path:** put the homebrew `.pkg` at the root of the prepared drive,
-   safely eject it from the Mac, and connect it to the PS4.
-2. **Ethernet path:** with GoldHEN active, use its supported package-transfer
-   path. For its internal installer, transfer the completed PKG to
-   `/data/pkg/` and verify the transfer. GoldHEN documents that directory.
-3. Open **GoldHEN → Debug Settings → Package Installer**. Menu wording may
-   vary by build; have the agent use the screen you actually see. Choose the
-   intended homebrew package and wait for installation to finish.
-4. Return to the PS4 home screen and open the app. Confirm its main screen
-   appears. Copying a PKG and installing it are separate steps.
+1. **USB path:** put the approved `.pkg` on the prepared drive, safely eject it, and connect it to the PS4.
+2. **Ethernet path:** keep GoldHEN active and use the supported package-transfer method. If the guide uses `/data/pkg/`, verify the completed transfer before installing.
+3. Open **GoldHEN → Debug Settings → Package Installer**. Menu names can differ by build, so I use the screen I actually see.
+4. Wait for the install to finish. Return to the PS4 home screen and open the app.
 
-Use only the drive you approved. Itemzflow's upstream guide says its dumper
-uses the first USB drive it finds. Disconnect other storage before that route.
-If you cannot do that safely, pick a supported network-dump route instead.
+Copying a PKG and installing it are two different steps. Itemzflow may use the first USB drive it finds, so I disconnect other storage before a dump. If that feels unsafe, I use a supported network-dump path instead.
 
-## 7. Back up my own Bloodborne
+## 7. Back up my own Bloodborne copy
 
-1. Insert the disc and make sure the game is fully installed on the PS4.
-   For a digital copy, verify your own installed copy. Keep the existing
-   firmware; do not accept a system update prompt.
-2. Verify the game's title ID and version. This wrapper's patches target
-   **CUSA00900 / 01.09**. Back up the base game and the matching installed
-   update separately, using the dumper's documented steps.
-3. Choose the approved USB or network destination. Check free space before
-   starting. Wait for the dumper's completion message and check its report.
-4. Transfer the complete result to the Mac's chosen folder. Check file counts,
-   sizes, and hashes where available. Keep the source copy until the Mac copy
-   has passed these checks.
-5. Follow shadPS4's current guide for required modules from your own console
-   and for importing the dump/update. Plain encrypted files copied over FTP
-   are not necessarily an emulator-ready dump.
-6. Keep saves in a separate backup. Do not mix a save restore into an FPS test.
+1. Insert my disc and let the PS4 finish installing it. A digital copy must be mine and already installed.
+2. Check the title ID and update. This launcher targets **CUSA00900 / 01.09**. I keep the base game and update records clear.
+3. Choose an approved USB or network destination and check free space first.
+4. Run the dumper's documented steps. Wait for its completion message and verify the copy with file sizes or hashes when possible.
+5. Follow the current [shadPS4 setup guide](https://shadps4.net/) for required modules and import rules. A plain FTP copy of encrypted installed files may not be an emulator-ready dump.
+6. Keep saves in a separate backup. I never mix save restore into an FPS test.
 
-I do not bundle the game, updates, firmware, or keys. There are no game download
-links here. A different region needs its own compatible setup; renaming the
-folder will not fix it.
+I do not share game files, updates, firmware, keys, or download links. A different region needs its own compatible setup; renaming a folder does not fix it.
 
-## 8. Launch on the Mac
+## 8. Set up the Mac
 
-Follow [Mac setup in the README](../README.md#mac-setup), or paste the
-[extracted-game prompt](AGENT-INSTALL.md#i-already-have-my-extracted-game).
-Run `python3 play.py --check` first, then launch the 1080p / 60 cap / perf 3
-baseline. Check the title screen, controls, sound, and a short walk in the game.
+Follow [the Mac setup in the README](../README.md#mac-setup). The short version is:
 
-Once that works, ask about a measured FPS test. Agree on a scene, picture
-quality, and test length. Keep one working profile to return to. Do not turn
-every knob at once. Even hunters need a way home.
+1. Install Python 3.11 or newer and the shadPS4 Qt Launcher.
+2. Install the pre-release shadPS4 engine, open it once, then close it so the config exists.
+3. Put my complete extracted game under `runtime/games/CUSA00900/` and keep the original backup.
+4. Download the matching [Bloodborne patch file](https://raw.githubusercontent.com/shadps4-emu/ps4_cheats/main/PATCHES/Bloodborne.xml) into `runtime/downloads/Bloodborne.xml`.
+5. Close shadPS4, back up the config, saves, and any generated patch profile.
+6. Run `python3 play.py --check`. This checks local files. It does not launch the game or prove gameplay.
+7. Launch with `python3 play.py`, or use `Play Bloodborne.command`.
+8. Check the title screen, controls, sound, and a short walk. I report those checks separately from setup and FPS.
+
+Once that works, I agree on one scene, picture quality, and test length before measuring FPS. I keep the 1080p / 60 cap / perf 3 profile as my way home.
+
+## If I get stuck
+
+I tell the agent the exact screen, error, firmware, game update, Mac model, and cable path. I do not delete caches, reset the PS4, update firmware, or format a drive as a first guess. The [starter prompts](AGENT-INSTALL.md) and [performance notes](../PERFORMANCE.md) keep the next step small.

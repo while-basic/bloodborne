@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.14.0
+Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      6270e010775e7962d4e76a70e7de3c4af6ccb4ecb027dc77b6a397c66257f6ab
+SHA256:      816afae6a822992f3c2717bcff4f20686681f511022bacdb163cb5ed8b814a73
 Chain:       solana-mainnet
-Tx:          cHPTQvQ1uzFjuiMNPtEtZj5kmjV8wyjytEoitMhrtcciGZH5wwS3P9HUfySsd6F47rnG9p3zB681k9cMjVDybSU
+Tx:          5HPGwDFCcCy8rkVmfkmMxBiapkdkiJuFufiV8pqVgNArTGHtPdsBdWfDHHy3HTaRJBVane5E6xerCs1Uv3gDosCm
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -86,6 +86,10 @@ default unchanged because this route is not a busy gameplay scene.
 The CPU recorder still points at `GpuCommandProcessor` and `Game:Main`, not the
 present thread. A five-second macOS `sample` attempt on the Rosetta process
 exited without a stack file, so I made no function-level CPU change.
+
+2026-10-14: I rewrote the PS4-to-Mac walkthrough in clear first-person steps.
+It now asks about gear and firmware first, separates USB from Ethernet, and
+keeps the exact-firmware gate for 13.xx paths.
 
 ## Resume from here
 
