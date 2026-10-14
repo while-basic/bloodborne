@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      3cd1cea8364a2fa8b73062967792897182512e7dca73c2b7f6db3609ff7735a4
+SHA256:      d345ca55750802ab2e31c0500661b36206e6276b488ae8fbdd2e043f98bdb928
 Chain:       solana-mainnet
-Tx:          3b2vCXBgFFKJhpRqEGYUmMySFRveHsnvgkZEBxsosSxKqFqNoFAV11Yr3nAAqhP6ev6JEVTghF292C4nRwAVPsfD
+Tx:          ighPdMZK8gkZTxTQLXpJeK74VheWbmWtcRxyDxHkc4JJUFpakCWUDcKzWdwy4rCM8EMTHr2SQNamLVKzjQfTgMz
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -198,3 +198,5 @@ no API key, $0).
 ## Completion note
 
 2026-10-13: I stopped the private GPU timing trial cleanly and confirmed no emulator process remains. The public 1080p baseline is unchanged; 90+ FPS gameplay is still unverified. The next session can resume from the documented profiling boundary without touching the external SSD.
+
+2026-10-13: I checked the current shadPS4 upstream tip in an isolated checkout. It had no measured renderer speed change; the result is recorded in PERFORMANCE.md.
