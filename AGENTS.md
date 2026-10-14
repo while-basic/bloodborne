@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      b73dbdaee8b0c804f34428faf557b8ad68757a1b65b20612178db4ad64f0139d
+SHA256:      0b83fb69d7fe7478792c48e4ff04cc008da43ba2bd95449e76cac03cb34f721e
 Chain:       solana-mainnet
-Tx:          254BKzEsroFY1CzMmfmbRWY1PFoJqBnmw1gj6E5LK6w5wMtFLNroiHY6WZVuttpdoKXuYRvSJTENRovqKE85UVcH
+Tx:          5QYYsTt7xVRdXU6YTZa9xkzHNoEmMs8hoap2geN62mNHofWuFLPQpZgmHSn1ZtPdZKrQVtnSkmaXdfXmiUfVfVFx
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -204,3 +204,4 @@ no API key, $0).
 2026-10-13: I made Vulkan core validation opt-in for play after a private title-route comparison. The measured gain is diagnostic only; real gameplay still needs a matching route.
 
 2026-10-13: I tried CUA keyboard, space, keypad, Return, and a private left-mouse Cross binding. The title menu still did not start offline play, so the faster captures remain menu-only. I stopped the trial and left the public profile unchanged.
+2026-10-13: I set the stopping point after pushing `46ae063` to `main`. The public docs and validation toggle are delivered; only repeated visible 90+ FPS gameplay remains open.
