@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.8.0
+Version:     v2.9.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      bfe747148dd992c3761547bc7c3f16db42d5197ff054b8f8d3691e0a1892f20d
+SHA256:      43ff2a2a990456995b00ac616c40872638d23698bc30147dbfc3ad2df1e452d6
 Chain:       solana-mainnet
-Tx:          fiMsWBVMUw25jM7FiXDN3kiBVeDRGWKfXEZivnfQvF9DR48ftTZpic3HZbdeUdoHfUdBiYnJMSvzvsYxPvnKpaz
+Tx:          3Z8Uvb4MUCFQBzJ5ivp9mPABtNfErE2LKAZ3RDc9gHXvCPD4upGfpDgjBG15TwMcYmNJ3Hw7yUWJMx8oRcJuz2wZ
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,12 +74,27 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Repeated effects tests reached 71.11/71.34 FPS at 1080p with a
-lighter picture; normal effects reached 56.28/56.38. A 720p trial reached 73.75.
-Vertex reuse did not show a gain. All test apps are closed, saves match, and
-90+ FPS remains open. PERFORMANCE.md records the checks and limits.
+2026-10-13: I added a checked frame-clock patch and recorded new CPU, clock,
+and memory tests. Wider buffer handling cut counted write faults; I have not
+accepted an FPS gain from these diagnostic runs. My original saves and current
+settings match, test apps are closed, and 90+ FPS remains open.
 
 ## Tests still open
+
+- Private source `663fd82` counts memory faults and protection requests with
+  lock-free counters. The Release build and signal/concurrency checks pass.
+  Clock-aligned repeats counted about 122 versus 900 write faults per frame
+  at 64 KiB versus the original range. Counts do not measure handling time.
+  Normal-thread buffer work is the next lead; keep probes off for FPS tests.
+- The public frame-clock patch builds and passes checks on the actual recorder,
+  including stale-file refusal. Live clock gaps were under five microseconds.
+  Runtime metadata keeps the exact signed builds and separates the later
+  refusal guard from the clocked game runs. Fresh vblank tests show no gain.
+- Private source `25f90df` counts short SSE4a and patcher events.
+  The build, sanitizer, concurrent-counter, and live-signal checks pass.
+  All four counters stayed at zero across 59.09 seconds in the lamp scene.
+  It stays off by default. No signal handler logs or reads a clock.
+  The existing presentation probe remains a separate dirty edit.
 
 - Private Mesa `f99a9bd` reuses unchanged vertex binds. The build and 40,000
   old-method checks pass, but the pair fell from 56.28 to 45.89 FPS with stalls.
@@ -98,7 +113,7 @@ Vertex reuse did not show a gain. All test apps are closed, saves match, and
   private and off. Depth-state creation measured only 1.45% of wall time in
   one diagnostic. Optional probes and thread-priority changes stay off for
   normal comparisons. PERFORMANCE.md carries the earlier results.
-- Keep the optional buffer patch off by default. Draw setup is the next
+- Keep the optional buffer patch off by default. Memory tracking is the next
   lead. Mesa already skips replay copies for one-time command buffers;
   do not duplicate that work or skip barriers without proving correctness.
 - Raw captures, exact source patches, build hashes, and the next trial stay

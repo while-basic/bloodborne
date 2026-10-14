@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Frame Capture Guide
-Version:     v1.3.0
+Version:     v1.4.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      89709894533b2c5e16e6370aa0c2853eb16087aaacdd6c2831ff66e2657bc33c
+SHA256:      e33c4ccd68358d20275ab2ea835fefd37eeb81825d5afdbbe6c2154a14d43baf
 Chain:       solana-mainnet
-Tx:          55nmQ73AKAumuPgUTyb96ARmQZ3Ao5c7iiNMjT4hULSJH2cyunwJcgR9UYQSLYWYjYUJXrbtTuBydPZvFTeNWBU5
+Tx:          2LKSPkW4ShzyLihUHTL9BuStdPQxwbuhXTQy3pUJjoryvpEtGMVjYsDLaLuRYVwwJLnd8Lq2X5pnusVTkk2X1G6B
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -57,6 +57,31 @@ The file is created only when the environment variable is set. An existing
 file is refused, so choose a new name for each run. Output is buffered and
 flushed every 120 samples. A crash or forced stop can lose the unflushed tail.
 End the game normally when possible and label interrupted runs.
+
+## Match frames to other counters
+
+The CSV is buffered. Its last visible row can be a few seconds old. I do not
+use that row as the current time when lining up frames with another recorder.
+
+For new captures, apply my [clock patch](../patches/shadps4/frame-clock-origin.patch)
+after the frame-timing patch and before building:
+
+```sh
+git apply --check /path/to/bloodborne/patches/shadps4/frame-clock-origin.patch
+git apply /path/to/bloodborne/patches/shadps4/frame-clock-origin.patch
+```
+
+It creates `frames.csv.origin.json` beside a log named `frames.csv`. This
+small file records the time at elapsed zero. Add a CSV row's `elapsed_seconds`
+to `unix_seconds_at_elapsed_zero` to line it up with wall-clock records.
+`calibration_span_seconds` tells me how long the clock check took.
+
+The extra clock check runs once. It adds no clock calls to later frames.
+Existing files are left alone. Recording stops if either output already exists.
+Use a fresh folder, check that both files were created, and keep the same patched
+build for both sides of a comparison.
+Clock changes or large calibration gaps can still spoil the match. The CSV
+format and the analyzer commands below stay the same.
 
 ## Read a known scene
 

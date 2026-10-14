@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.8.0
+Version:     v2.9.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      c3486a5ae43e11a7c3b4e299a629d1e2d0fe673404f52a7972c8e42c74502494
+SHA256:      83b374e4a200bd320d5ac98cef583af53f3ba491a1bfb3391712d2961ee7fb06
 Chain:       solana-mainnet
-Tx:          4hLC4F2CxCtWTRDFA1sYaSrVE8bGzyqVZPpY9HKNBPKdmxvAsFqemworDMoGT8zN3DTbwiYFweK2kw4PW49u3ajM
+Tx:          F946NLDY3guj86vsVAShbGxrbjHPrMKUwF4yAgmWQEh7uTmRwqz6pezZLWsjTaAd75jnTfTiKgWNfeqTgKcwpu3
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -390,6 +390,63 @@ averaged **73.75 FPS**, with a **39.39 FPS 1% low**, a **33.41 ms worst frame**,
 and no frames over 50 ms. The view matched at both ends. It was one run, and the
 small difference does not make 720p a proven win. Cutting the pixel count did
 not get this scene to 90 FPS.
+
+## A CPU fallback path I ruled out for this scene
+
+Some short SSE4a instructions can fall back to an interpreter each time they
+run. I added counters to see if that was happening here. The counters passed
+sanitizer checks, 800,000 events from eight threads, and 1,000 live signal calls.
+The signal path uses lock-free counters. A separate thread writes once a second.
+
+In the locked lamp scene, 57 snapshots covered 59.09 seconds. The short EXTRQ,
+short INSERTQ, illegal-instruction patch, and access-fault patch counters all
+stayed at **zero**. These counters cover the patcher, not every memory fault in
+the emulator. I have no evidence that this fallback path is a useful speed
+target for this view. The diagnostic stays off during normal tests.
+
+## Counting memory faults
+
+I added a separate counter for memory tracking. A write fault means the game
+touched a page that the emulator was watching for changes. Handling many of
+these calls may cost time, so I counted them before changing more code.
+
+| Buffer write group | Counter window | Write faults per second |
+| --- | ---: | ---: |
+| 64 KiB experiment | 58.96 s | 3,139 |
+| Original narrow range | 59.50 s | 27,372 |
+
+Both used the same diagnostic build and the locked lamp view. Neither counted
+read faults or unhandled faults in these windows. The wider setting removed
+many fault-handler visits, but both frame captures had long stalls. I do not
+use their FPS values to claim a gain. Other apps and probe overhead were not
+controlled. Counts are not time spent handling each fault.
+
+The older frame log flushes every 120 samples. Its last row can be old, so the
+first counter-to-frame ratios were only rough estimates. I added a small
+[clock patch](docs/FRAME-CAPTURE.md#match-frames-to-other-counters) to line up
+future records. It runs the extra clock check once. The Release build and
+sanitizer checks pass, including checks that old output files stay untouched.
+
+With that clock reference, a fresh 64 KiB run counted about **122 write faults
+per presented frame**. The matching original-range run counted about **900**.
+Their counter windows lasted 59.15 and 59.40 seconds. Both clock checks took
+less than five microseconds. These are still approximate ratios: the counters
+are read one by one, and neither run controlled other apps. I have not accepted
+an FPS gain from this pair. My next step is to measure the normal buffer work
+that follows these faults, keeping timing calls out of the signal handler.
+
+## A fresh clock check
+
+I tried vblank 240 again with the lighter perf-7 picture and shader reuse on.
+That run averaged **37.65 FPS**. A fresh vblank-120 control averaged **39.57 FPS**.
+Each used the same signed build, game patches, copied save, and locked lamp
+view for about 60 seconds. Other apps were busy, so I do not compare this pair
+with the earlier 71 FPS runs. This pair does not support a faster clock setting.
+
+I also tested repeated Metal depth-state calls in a small, separate program.
+The usual call took about 13 nanoseconds in that test. It made no draws and
+submitted no GPU work, so it is not a game benchmark. I left that driver code
+alone and moved on to memory tracking.
 
 ## Other paths I checked
 
