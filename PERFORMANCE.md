@@ -4,9 +4,9 @@ Version:     v2.14.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      44118fac388f977ded3479ef89b9b5a2cbf1be9786293dd2cbdd2faf202b0cce
+SHA256:      fe1f01917db47a6eb6f5653035c0ac620c4c0a5195225ca904fedb02a11a85dd
 Chain:       solana-mainnet
-Tx:          2na1eWMKvS3PtngoJUsZuUFjjJEcmXkaPN8UvByNc3zAeXT7b7H7hPtH7VksPJx88crrF1YrX5tQch37KuuvA18u
+Tx:          5zKpMKghiU6TdKL6MvgXNY4PWhkszoXdqqKfw5XCWWjwHhM9D62HFXhbA1259m4wBwKEmos71deZpcDCVwfK21oG
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -532,6 +532,10 @@ new renderer. My extracted `eboot.bin` is a PS4 x86-64 executable.
 The investigated engine was **shadPS4 0.19.1 WIP**, commit
 [`e0a4667`](https://github.com/shadps4-emu/shadPS4/commit/e0a466753a1aacbc8db8253be685bf7ab4d9daae),
 using Rosetta and KosmicKrisp 26.2.99 on my M5 Max. GPU rendering was active.
+I also checked the current upstream tip, [`7295d12`](https://github.com/shadps4-emu/shadPS4/commit/7295d12),
+in a clean isolated checkout. Its changes are network notifications, settings cleanup, and
+null index safety; I found no frame-pacing or renderer speed change to claim. The clean
+upstream build could not finish because a nested dependency checkout was incomplete.
 
 That source accepts an ARM build target, but its
 [`RunMainEntry`](https://github.com/shadps4-emu/shadPS4/blob/e0a466753a1aacbc8db8253be685bf7ab4d9daae/src/core/linker.cpp#L41-L64)
