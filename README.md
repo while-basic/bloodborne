@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v3.2.0
+Version:     v3.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      f03ecacfac417d3a42f5db3ae1a04c4c85efef11f74b040b5d760f11fbcce59b
+SHA256:      4de16a0403836f7691185e605a32f1be163ec16ab95f4ad007d748f09cb2bef2
 Chain:       solana-mainnet
-Tx:          2bfC3V4qaw9UwG6yJ9H6vyWH5dDDzge81H94rZY5xrDm1WgYZQvnUSqbTfFCp1wt7ArSdMCCGyW2WryGKEp9Bngj
+Tx:          NW9jkF8fSmLhJ3thWBuYSpxX1182t3XPyFaPCECfQgmqHYLhv9KGz9mpQ458jRZjVkrjEN5UPTVarLfoQUDRmyG
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -67,9 +67,11 @@ quality barely helps in crowds. I wrote it all down in
 My best setting right now is **1080p, a 60 FPS cap, perf 3, and borderless
 fullscreen**. That's what the launcher picks for you.
 
-My next lead is [bbport for Mac](https://github.com/bmy/bbport-mac), a newer
-Bloodborne-only project that its author says runs faster on the same kind of
-Mac. I haven't tested it on my Mac yet. When I do, the results go here.
+**New: a faster engine.** The launcher can now also run
+[bbport for Mac](https://github.com/bmy/bbport-mac), a Bloodborne-only engine
+built on shadPS4's parts. At the same Central Yharnam spot where shadPS4 gave
+me 43–48 FPS, bbport held **56–59**. I haven't measured the big crowd on it yet.
+That's the next fight. [How to try it](#try-the-faster-engine-bbport).
 
 A million views do not add a million frames. I only share numbers I measured.
 
@@ -217,6 +219,32 @@ import your own files first.
    The first time you visit an area, it may stutter while the emulator gets
    ready. That gets better the second time. Check the title screen, then
    controls, sound, and actual play. A passing check is only step one.
+
+## Try the faster engine (bbport)
+
+bbport skips most of the pretend-PS4 work and runs the game more directly.
+It also listens to the keyboard on the menus (Space = Cross).
+
+```sh
+python3 play.py --engine bbport --install   # one time: download + safety check
+python3 play.py --engine bbport             # play
+python3 play.py --engine bbport --stats     # FPS summary of your last session
+```
+
+The first command downloads bbport's official release and checks its
+fingerprint (SHA-256). If it doesn't match, it deletes the download and stops.
+Everything goes in this repo's `runtime/` folder. Nothing goes in Applications.
+
+The first time you play, the launcher does two things for you:
+
+- It builds a game folder with update 1.09 already merged in. It uses Mac
+  "clone" copies, so it takes almost no extra space. Your originals stay put.
+- It **copies** your shadPS4 save over. Your shadPS4 save stays untouched.
+  After that, bbport keeps its own save in `runtime/bbport/`.
+
+The first launch can sit on a black screen for a few minutes while shaders
+build. That's normal. bbport is newer and still has rough edges: a few effects
+are missing on Mac, and things can pop in. Keep your shadPS4 setup as a backup.
 
 ## Turn the knobs
 

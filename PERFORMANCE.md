@@ -4,13 +4,33 @@ Version:     v2.14.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      5f2523d4a9175af7efeab2137371dc9822b4f8df322ea9b597d31db69a58675a
+SHA256:      3e4e734850663b124d5fbd82de7a2d50447d1f309360ef65ea19adc43cef2d9d
 Chain:       solana-mainnet
-Tx:          2zZrwjkQmF8tpM25PsFbjxSCgFhEcsnDJy5ohQJWd4yYsQvK5GBWmKp8wm8FcFLobrDFCK3wxRBQaZ66ziZsELVM
+Tx:          4db4MiZJceSqNhNHVLNC5LXKAr6jQGgA7tBmgT1DWCrnKqRSgAdniij6EuwkYC96w3UQyQn5yZDspY8sKAay9Y1H
 License:     The Unlicense (public domain dedication)
 ```
 
 # Hunting the missing frames
+
+## bbport: a faster engine, same game — October 13, 2026
+
+I tried [bbport for Mac](https://github.com/bmy/bbport-mac) through
+`python3 play.py --engine bbport`. It is a Bloodborne-only engine built on
+shadPS4's renderer, but it skips most of the full-console emulation.
+
+Same Mac, same copied save, 1080p, 60 FPS cap, windowed:
+
+| Spot | shadPS4 (earlier) | bbport |
+| --- | --- | --- |
+| Title screen | 60 | 60 |
+| Central Yharnam, first lamp, standing | 43–48 | 56–59 |
+| Quiet walking, warm areas (median / p10) | — | 60 / 60 |
+
+It also fixed the menu input wall: keyboard presses now reach the game, so I
+got from the title to gameplay without a controller. First looks at new areas
+still stall while shaders build (I saw 20–26 FPS for a moment); that fades on
+the second visit. **I have not measured the big crowd fight on bbport yet.**
+That is the next run, with `python3 play.py --engine bbport --stats` after it.
 
 ## Stopping point — October 13, 2026
 

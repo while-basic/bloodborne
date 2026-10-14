@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Launcher License Notes
-Version:     v1.2.0
+Version:     v1.3.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      ef16a1f50e73750f0b7ae755cc1c8853c6cf5a0386e44fb744cf180bb8bda7d5
+SHA256:      72d219c0f74b32cda73ca0f46c1bad108a5a384346a52cdc40fcafae3c7988ee
 Chain:       solana-mainnet
-Tx:          3BS4XRVxtAoLoTyShTWH5ax1RZW5HcJANbfenBcmTbp14se63ZeQN8Ew7UPYfQwxemnRp97ieyGXc8ZpwgGBiicn
+Tx:          4R1zBXMvLCNZwcFm5zBWJk4jbbj4KBDM7nXKKrdsn6EeRmgbgMPDe9fJiQj8b1WXsQrRZvmjdSQr5mi9LoJM6BzK
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -24,3 +24,9 @@ Their rights and licenses still apply. My original work comes with no warranty.
 
 The frame-timing patch under `patches/shadps4/` changes shadPS4 and follows its
 GPL-2.0-or-later license. It is outside my Unlicense dedication.
+
+`python3 play.py --engine bbport --install` downloads
+[bbport for Mac](https://github.com/bmy/bbport-mac) from its own release page
+and checks the file's SHA-256 before unpacking it into `runtime/`. bbport is
+GPL-2.0-or-later. I do not include its code or app in this repo, and my
+Unlicense dedication does not cover it.

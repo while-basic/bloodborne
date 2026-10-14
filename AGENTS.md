@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.16.0
+Version:     v2.17.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      ff6444bdf344e543a419c262e413e7bb8924c5de7f9460f3dd05afb1edbbc584
+SHA256:      9371313b3b7754d7b77efc4c789a2c4e0355052bd913c9f5b2f679494ad0ed87
 Chain:       solana-mainnet
-Tx:          5Eoz62hSZeqH9P3PWMLNLiU5dgbhGr6mte916jLmsg2d6teAFoMqT7FCE94eKZQWAAzcbjmKzPy9wrNGuaGSTnVY
+Tx:          ACg3TrLU834NNCQryqDcvhzD16bVBFmAZU1eHKyLhdPgkg71ZxnQcTukFHYxGnCzYRCsKX49i6CRogXy6Zuf83d
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -73,6 +73,12 @@ checks, and performance notes before changing the setup.
   Browser-local execution versus streaming remains open.
 
 ## Completion note
+
+2026-10-13: I added `--engine bbport` to play.py. It installs the pinned bbport
+for Mac release under runtime/ (SHA-256 checked), merges the 1.09 update with
+APFS clones, copies the shadPS4 save once, and logs per-frame CSVs that
+`--stats` summarizes. Same spot: 56–59 FPS versus 43–48 on shadPS4. The local
+runtime now lives in the main checkout. The crowd fight is not measured yet.
 
 2026-10-13: I rewrote the README for people who don't code: a plain-words
 intro, a word list, and simpler setup steps, in the same voice. My goal is now

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Roadmap
-Version:     v2.1.0
+Version:     v2.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      6dd2ccc3abf481ca049e79e6de64f0d3b7db8051dfdbfdd8c9d0c2d9b9a92825
+SHA256:      6fe76f9b6bc0606fecf840f674997f25046d91d9b6d6627fc0db5016cbc75202
 Chain:       solana-mainnet
-Tx:          5GSaQdEpASCusdwZ4ERi4xUgvmzcvN85Bq13ZzdHBCeBesMGC9Pe6A1A6JHuUWPWWE7aLgocZmhq4VeUFhke5BbW
+Tx:          5Cwr9agdk6PYJwj9tdKKiGMhQEHSoqnCeVNbbiFBRCfK3CM3eJk7F9EKVK592N2bEeyBsAnYUBMsFbQZaviW8QaE
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -39,6 +39,7 @@ translating PS4 game code. So I'm also testing
 [bbport for Mac](https://github.com/bmy/bbport-mac), a Bloodborne-only project.
 
 - [x] Fix the test scene and route (Central Yharnam crowd).
+- [x] Add bbport as a launcher engine (56–59 FPS where shadPS4 gave 43–48).
 - [ ] Hold 60+ FPS through the crowd fight, measured, not guessed.
 - [ ] Record the engine build, patch hashes, power mode, and display refresh.
 - [ ] Capture real FPS and frame times across repeated warm-cache runs.
