@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v3.3.0
+Version:     v3.4.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-13
-SHA256:      4de16a0403836f7691185e605a32f1be163ec16ab95f4ad007d748f09cb2bef2
+Date:        2026-10-14
+SHA256:      61aade409ef97510ada088f74f6e35e6e2bb98232038ebeb35ae044c7bcc2143
 Chain:       solana-mainnet
-Tx:          NW9jkF8fSmLhJ3thWBuYSpxX1182t3XPyFaPCECfQgmqHYLhv9KGz9mpQ458jRZjVkrjEN5UPTVarLfoQUDRmyG
+Tx:          vRqb7WgwjG7aF8hHAM5sxSX2uXVspTc7b1c9FySGVg3WWA6ngbnbJRS7nvdoGfU7NjBTFj8BeGKV9DVpfZteVzt
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -245,6 +245,21 @@ The first time you play, the launcher does two things for you:
 The first launch can sit on a black screen for a few minutes while shaders
 build. That's normal. bbport is newer and still has rough edges: a few effects
 are missing on Mac, and things can pop in. Keep your shadPS4 setup as a backup.
+
+### My crash fix for bbport
+
+bbport 0.4-v1 sometimes stops mid-fight with `Unknown data_format=15`. The game
+was still writing a vertex description when bbport read it. My patch swaps in a
+plain stand-in format for that one draw, so the game keeps going. You can build it
+with bbport's own scripts (the first run takes a while):
+
+```sh
+git clone https://github.com/bmy/bbport-mac ~/Documents/bbport-mac
+cd ~/Documents/bbport-mac && git checkout 0.4-v1
+git apply /path/to/this/repo/patches/bbport/vertex-format-standin.patch
+bash tools/macos/setup_deps.sh && bash tools/macos/build.sh
+cd /path/to/this/repo && python3 play.py --engine bbport --bbport-src ~/Documents/bbport-mac
+```
 
 ## Turn the knobs
 

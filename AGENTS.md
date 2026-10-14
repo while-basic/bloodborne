@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.19.0
+Version:     v2.20.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-14
-SHA256:      c476522613a63ab1bc40c57116844f4acb2b9f7dd57d9e89ee7765fbc6327c16
+SHA256:      9a5647754e66561dc98200d07ff5cd8757070b6cd6ffb685c0e377eb05ff2b76
 Chain:       solana-mainnet
-Tx:          WZDsKiZsxzopd47d6uMJURPETmDMTvQmCbPe42SJ2Dave652DDpYoQyrExLGtPcvtg5su9GgVCdjvbXBNDsAyDe
+Tx:          C64eqjS1qaZqmvarzSAMP4oBE1DQ45SxZXM6fU8i3gWJ4jUXMC4aMSHXc4z3skjXGuwSpxt5tpZUSYVmBmBUqLW
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -220,3 +220,4 @@ no API key, $0).
 2026-10-13: I stopped the latest runtime after a visible 90 FPS title-menu overlay at 1080p with vblank 90. `Down` plus `KP_2` still did not start offline play, so 90+ FPS gameplay remains unverified.
 2026-10-14: I added the faster bbport engine to the PS4-to-Mac walkthrough and the setup and frame-hunting prompts. Docs only; the crowd fight on bbport is still unmeasured.
 2026-10-14: I fixed `--engine bbport --stats` crashing when quitting cut the last log row short. My first bbport crowd run felt smoother: median 60 FPS, 10% low 60, 9% of frames under 58, with a few long hitches.
+2026-10-14: I patched bbport so a half-written vertex format (the `data_format=15` crash) gets a stand-in instead of stopping the game, and added `--bbport-src` to run my own build. Built it; a long play test still has to prove it.

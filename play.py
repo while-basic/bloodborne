@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.5.1
+# Version:     v1.6.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-14
-# SHA256:      e6d5583868f57eb821500f378614e4d397f84ff8198c935b0c879d60d51b3f41
+# SHA256:      1d3dfd8f932616c2ffa5419eca1bf062dd79a261d737ba20cf54fb433bd58df2
 # Chain:       solana-mainnet
-# Tx:          4LiJQFfXWusGccp9ZfMDp8KzEwZkuvKLXLgtyF3wdfnRUQPHaLhsSjdSovK7AaybrrHhXFarGoEsPeg6cSpPgucq
+# Tx:          VNtNu64BxhwtYFaTocSRo1LSTiy9oEqAQp4KVjL86M9gRcX8XShtQ9xYXiBgGLdMY5Soas1CSuH9SGve1vrAV13
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -231,12 +231,15 @@ def bbport_stats(parser):
 def launch_bbport(args, parser):
     if args.fps == 120:
         parser.error("bbport takes --fps 60 or 90.")
-    if not BBPORT_RUN.is_file():
+    run = Path(args.bbport_src).expanduser() / "tools/macos/run.sh" if args.bbport_src else BBPORT_RUN
+    if args.bbport_src and not (run.is_file() and (run.parents[2] / "out/bb-probe").is_file()):
+        parser.error(f"No built bbport checkout at {args.bbport_src} (needs tools/macos/build.sh first).")
+    if not run.is_file():
         parser.error("bbport is not installed yet. Run: python3 play.py --engine bbport --install")
     width, height = SIZES[args.resolution]
     patches = bbport_patches(args.perf, args.extra)
     if args.check:
-        print(json.dumps({"engine": str(BBPORT_RUN), "resolution": args.resolution, "fps_target": args.fps,
+        print(json.dumps({"engine": str(run), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "patches": patches, "game": str(GAME_MERGED),
                           "game_ready": (GAME_MERGED / "eboot.bin").is_file(), "data": str(BBPORT_DATA),
                           "fullscreen": args.fullscreen, "gameplay_verified": False}, indent=2))
@@ -253,9 +256,10 @@ def launch_bbport(args, parser):
                BB_PATCHES=";".join(patches), BB_FULLSCREEN="1" if args.fullscreen else "0")
     if not args.no_log:
         env["BB_SAVE_LOG"] = "1"  # per-frame CSV in runtime/bbport/logs/
-    print(f"Launching bbport {BBPORT_VERSION}: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
+    build = f"own build {args.bbport_src}" if args.bbport_src else BBPORT_VERSION
+    print(f"Launching bbport {build}: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
           f"patches: {', '.join(patches) or 'none'}", flush=True)
-    return subprocess.call(["bash", str(BBPORT_RUN)], cwd=ROOT, env=env)
+    return subprocess.call(["bash", str(run)], cwd=ROOT, env=env)
 
 
 def main():
@@ -267,6 +271,8 @@ def main():
     parser.add_argument("--engine", choices=[*ENGINES, "bbport"], default="nightly",
                         help="bbport = the Bloodborne-only engine from bbport-mac (install it with --install)")
     parser.add_argument("--install", action="store_true", help="with --engine bbport: download and check it")
+    parser.add_argument("--bbport-src", metavar="DIR",
+                        help="with --engine bbport: run your own built bbport-mac checkout instead of the release")
     parser.add_argument("--stats", action="store_true", help="with --engine bbport: FPS summary of the last session")
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
     parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",

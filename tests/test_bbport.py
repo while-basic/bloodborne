@@ -1,6 +1,7 @@
 """Exercise the bbport engine helpers without game files or the engine."""
 import contextlib
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -87,6 +88,24 @@ class BbportTests(unittest.TestCase):
                 contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             play.main()
         self.assertIn("--engine bbport --install", stderr.getvalue())
+
+
+    def test_own_build_needs_a_built_checkout(self):
+        checkout = self.root / "bbport-mac"
+        (checkout / "tools/macos").mkdir(parents=True)
+        (checkout / "tools/macos/run.sh").write_text("")
+        stderr = io.StringIO()
+        with patch("sys.argv", ["play.py", "--engine", "bbport", "--bbport-src", str(checkout), "--check"]), \
+                contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
+            play.main()
+        self.assertIn("tools/macos/build.sh", stderr.getvalue())
+        (checkout / "out").mkdir()
+        (checkout / "out/bb-probe").write_text("")
+        stdout = io.StringIO()
+        with patch("sys.argv", ["play.py", "--engine", "bbport", "--bbport-src", str(checkout), "--check"]), \
+                contextlib.redirect_stdout(stdout):
+            self.assertEqual(play.main(), 0)
+        self.assertEqual(json.loads(stdout.getvalue())["engine"], str(checkout / "tools/macos/run.sh"))
 
 
 if __name__ == "__main__":
