@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.5.0
+# Version:     v1.5.1
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
-# Date:        2026-10-13
-# SHA256:      cbd0d7302b4e01fbeefe8beeb5e637f0d652d3b22fcdad234a861eaeac506689
+# Date:        2026-10-14
+# SHA256:      e6d5583868f57eb821500f378614e4d397f84ff8198c935b0c879d60d51b3f41
 # Chain:       solana-mainnet
-# Tx:          5UstmWTaGE4iuTz2iWrhiU2LRtMFQxtAPPEaoF18LajpuLzo9Ps5zpRyJjbXCUSiy7bhMuUhyGUBxPS2RLANig7S
+# Tx:          4LiJQFfXWusGccp9ZfMDp8KzEwZkuvKLXLgtyF3wdfnRUQPHaLhsSjdSovK7AaybrrHhXFarGoEsPeg6cSpPgucq
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -204,9 +204,11 @@ def import_save():
 
 
 def frame_summary(rows, min_draws=500):
-    """FPS summary of gameplay frames from a bbport frames CSV; menus and loading screens draw far less."""
+    """FPS summary of gameplay frames from a bbport frames CSV; menus and loading screens draw far less.
+    Quitting can cut the last row short, so rows with missing fields are skipped."""
     times = sorted(float(row["frame_ms"]) for row in rows
-                   if int(row["draws"]) >= min_draws and float(row["frame_ms"]) > 0)
+                   if row.get("draws") and row.get("frame_ms")
+                   and int(row["draws"]) >= min_draws and float(row["frame_ms"]) > 0)
     if not times:
         return None
     fps = [1000 / ms for ms in reversed(times)]  # slowest first

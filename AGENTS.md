@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.18.0
+Version:     v2.19.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-14
-SHA256:      b66ba978f10c2b9e409241c41757dafabc31e20b8ad4ebecad69edd953241d53
+SHA256:      c476522613a63ab1bc40c57116844f4acb2b9f7dd57d9e89ee7765fbc6327c16
 Chain:       solana-mainnet
-Tx:          5rYugCBKqg5SfNZjPRYGYErn1rLKfot9Hojw5i4j5DKGkGmS8VNkVFjgi88nA6cf5dLVTEtsGczhXDVQhMtG8T37
+Tx:          WZDsKiZsxzopd47d6uMJURPETmDMTvQmCbPe42SJ2Dave652DDpYoQyrExLGtPcvtg5su9GgVCdjvbXBNDsAyDe
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -219,3 +219,4 @@ no API key, $0).
 2026-10-14: I resumed the private runtime from the isolated checkout, reached the title menu at a visible 60 FPS, and tested the configured `Down`, `Return`, `n`, and `KP_2` paths. The offline route still did not start; I stopped the emulator cleanly. 90+ FPS gameplay remains unverified.
 2026-10-13: I stopped the latest runtime after a visible 90 FPS title-menu overlay at 1080p with vblank 90. `Down` plus `KP_2` still did not start offline play, so 90+ FPS gameplay remains unverified.
 2026-10-14: I added the faster bbport engine to the PS4-to-Mac walkthrough and the setup and frame-hunting prompts. Docs only; the crowd fight on bbport is still unmeasured.
+2026-10-14: I fixed `--engine bbport --stats` crashing when quitting cut the last log row short. My first bbport crowd run felt smoother: median 60 FPS, 10% low 60, 9% of frames under 58, with a few long hitches.

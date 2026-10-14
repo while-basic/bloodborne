@@ -46,6 +46,10 @@ class BbportTests(unittest.TestCase):
         self.assertEqual(summary["frames_under_58_fps_pct"], 1.0)
         self.assertIsNone(play.frame_summary([{"frame_ms": "16.67", "draws": "14"}]))
 
+    def test_frame_summary_skips_a_row_cut_off_at_quit(self):
+        rows = [{"frame_ms": "16.67", "draws": "1400"}] * 10 + [{"frame_ms": "16.67", "draws": None}]
+        self.assertEqual(play.frame_summary(rows)["frames"], 10)
+
     def test_merge_game_overlays_update_and_keeps_originals(self):
         play.GAME.parent.mkdir(parents=True)
         play.GAME.write_text("base")
