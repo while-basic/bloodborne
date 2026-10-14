@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.10.0
+Version:     v2.11.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      943178ef1ae796808e8eb9bf7ede601690d2a4e168532ba017751e225f4e73e5
-Chain:       solana-mainnet
-Tx:          5BMDiEPT9zkpuuJ2ANcG1pLAatdRXXskD7pBW8FyqG1PtTKW57inQycaqJnbL6Vgg65mqqd1Kf1Sk9v5UFjcJVuq
+SHA256:      649829fe470640df5dd54c02938a19bd822572e364a7aed53542e20728dcab05
+Chain:       solana-devnet
+Tx:          65sW6c2GDGuTUBKxHLkatt7q3NnW6YWWwyi8T6gSTBSy7DSWDENNzqGmhWgUhr1y8ofpJ8iZSDhD7AVMLFGF96DZ
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -76,7 +76,10 @@ checks, and performance notes before changing the setup.
 
 2026-10-13: I stopped at a clean checkpoint after publishing the frame-clock
 fix and measuring buffer work. All test apps are closed, all 16 original saves
-and current settings match, and 90+ FPS remains unverified.
+and current settings match, and 90+ FPS remains unverified. I prepared a GPU
+feedback probe, but LaunchServices opened an older copy, so I captured no valid
+GPU result and claimed no GPU optimization. The next lead is GPU start/end
+timing with a unique app identity.
 
 ## Resume from here
 

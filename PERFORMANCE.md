@@ -1,16 +1,24 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.10.0
+Version:     v2.11.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      3f35c289430838117cda3b9e8686c1d55034b55c8d79a8132dd0b602bc6943b6
+SHA256:      e1f1a9c9ec229da5b0313aa9bdf817a3725e14ed4a0bd050d616f3c976e16b4b
 Chain:       solana-mainnet
-Tx:          3ZtzXonvDC7EW9AUaymHmG9mHwHy3naAxsbpWbvk3EJqtNQ1vZxnD22axDZUxJQbGFgbvz6zFZQTfgbUrypUc3pQ
+Tx:          5aAETataUNBhFsBZMR6QyzqLvEZkU2xgEhq3FHcAnwdH4VHeiNqYPHAChBKoQUNNfdwt8xfS4cZeTN6adU2ugz2B
 License:     The Unlicense (public domain dedication)
 ```
 
 # Hunting the missing frames
+
+## Stopping point — October 13, 2026
+
+I prepared a GPU feedback probe using shadPS4's existing Metal start/end timing
+hooks. LaunchServices confused the copied app with an older probe, so I did not
+get a valid GPU capture. I made no GPU change and do not claim a speedup. The
+next useful lead is to repeat the probe with a unique bundle identity, then
+compare the same busy scene against the working 1080p profile.
 
 My current baseline is **1080p / 60 FPS target / perf 3**. After a rough 900p
 boss attempt, I went back to this setup and called the next run “very good.”
