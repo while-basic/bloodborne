@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      258d34028c4aa7410d3dd9c1e5dd9c550202ac26baef45f482f9b9d9c5b3f54e
+SHA256:      c53c986b57881d396df08eed6814df903e1c7cf687e7229a3158cb02562590be
 Chain:       solana-mainnet
-Tx:          58MTkX2q63UFKkUHtjPGa3RvnRC8jv4AL12YNYVXeG6rEbxXa6KkRoNCAbbnqV2EfxiEdEpHHUvMNYLtMAzL4Z5Q
+Tx:          4fcEpjgi5MKjdmByv8Ks39TcJAqngL9yqxbFPT4set3ryJ5b9vGcdmEnm8SoeKwuwLM5BnEVDvgwi2tmmzh7wLw9
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -206,3 +206,4 @@ no API key, $0).
 2026-10-13: I tried CUA keyboard, space, keypad, Return, and a private left-mouse Cross binding. The title menu still did not start offline play, so the faster captures remain menu-only. I stopped the trial and left the public profile unchanged.
 2026-10-13: I set the stopping point after pushing `46ae063` to `main`. The public docs and validation toggle are delivered; only repeated visible 90+ FPS gameplay remains open.
 2026-10-14: I resumed the private runtime from the isolated checkout, reached the title menu at a visible 60 FPS, and tested the configured `Down`, `Return`, `n`, and `KP_2` paths. The offline route still did not start; I stopped the emulator cleanly. 90+ FPS gameplay remains unverified.
+2026-10-13: I stopped the latest runtime after a visible 90 FPS title-menu overlay at 1080p with vblank 90. `Down` plus `KP_2` still did not start offline play, so 90+ FPS gameplay remains unverified.
