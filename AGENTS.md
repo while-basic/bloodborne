@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.7.0
+Version:     v2.8.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      275b5dd2db26adf4dc7ceb9fbbedcb9d429a3a947b57ccd22e43058bd3cd75e8
+SHA256:      bfe747148dd992c3761547bc7c3f16db42d5197ff054b8f8d3691e0a1892f20d
 Chain:       solana-mainnet
-Tx:          3YsQmfFgnS9Jmw7sWmHEfzdVHtnDpyR9Qd3XWWsPRujStTyEYV8iNNprp57iicmLsfd2vojoTWA323tM66nkQXCp
+Tx:          fiMsWBVMUw25jM7FiXDN3kiBVeDRGWKfXEZivnfQvF9DR48ftTZpic3HZbdeUdoHfUdBiYnJMSvzvsYxPvnKpaz
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,12 +74,20 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: Added draw timing notes and four locked-input shader-reuse tests.
-Enabled runs reached 50.63/50.44 FPS; controls reached 46.11/42.42. This is
-promising, with background work still uncontrolled. 90+ FPS remains open.
+2026-10-13: Repeated effects tests reached 71.11/71.34 FPS at 1080p with a
+lighter picture; normal effects reached 56.28/56.38. A 720p trial reached 73.75.
+Vertex reuse did not show a gain. All test apps are closed, saves match, and
+90+ FPS remains open. PERFORMANCE.md records the checks and limits.
 
 ## Tests still open
 
+- Private Mesa `f99a9bd` reuses unchanged vertex binds. The build and 40,000
+  old-method checks pass, but the pair fell from 56.28 to 45.89 FPS with stalls.
+  Keep it private and off. Live counters avoided new dirty marks on 7.03% of calls;
+  they do not prove later GPU uploads were skipped.
+- Locked 1080p effects tests reached 56.28/56.38 FPS at perf 3 and 71.11/71.34
+  at perf 7. Shader reuse stayed on; vertex reuse and probes stayed off. The
+  lighter picture is a tradeoff. One 720p trial reached 73.75; 90+ is unverified.
 - Private Mesa `675da32` skips clean, unchanged shader binds. It builds and
   passes 10,000 old-method comparisons. Keep it off by default pending more
   scenes and combat, sound, controls, and game-speed checks.

@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.7.0
+Version:     v2.8.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      cc92e0021f4489c87408cbfa7f71cc004876a243ac841f80cf82d37b7680d31e
+SHA256:      c3486a5ae43e11a7c3b4e299a629d1e2d0fe673404f52a7972c8e42c74502494
 Chain:       solana-mainnet
-Tx:          53ahk1LogKd7FKS9Zj1ZiW7cGYBVZjA9Ha78nYEJPipyVGxdqNz6qXFLtSxRipo45YCiQ6EcnmgyjsoawXgyj1K7
+Tx:          4hLC4F2CxCtWTRDFA1sYaSrVE8bGzyqVZPpY9HKNBPKdmxvAsFqemworDMoGT8zN3DTbwiYFweK2kw4PW49u3ajM
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -337,6 +337,59 @@ does not test combat, sound, controls, or game speed. **90+ FPS is still open.**
 All 16 original save files still match their backups. My original settings
 now differ only in volume, which changed from 100 to 0. I left that change
 alone. The tests used separate settings and copied saves.
+
+## Vertex setup: fewer calls did not pay off
+
+I tried reusing vertex buffer bindings when their address and size stayed the
+same. The code still updates strides and keeps pending state changes. It passed
+40,000 comparisons with the old method, plus sanitizer and thread checks.
+
+A separate live counter test saw 3,379,200 calls over 58.89 seconds. Only 5.23%
+of bindings stayed the same. About 7.03% of calls avoided marking vertex data as
+changed. That does not prove the later GPU data upload was skipped.
+
+With those counters off, I ran the same locked lamp view for a minute each:
+
+| Vertex reuse | Average FPS | 1% low FPS | Worst frame | Frames over 50 ms |
+| --- | ---: | ---: | ---: | ---: |
+| Off | 56.28 | 28.94 | 41.74 ms | 0 |
+| On | 45.89 | 4.06 | 816.71 ms | 79 |
+
+The build, starting settings, game patches, and view matched. Shader reuse was
+on in both runs. Other work on the Mac was still outside my control, so I cannot
+blame every stall on this change. I have no speed win to keep here. This private
+experiment stays off.
+
+## Fewer effects, one setting at a time
+
+I tried the lighter picture again with the same signed build, 1080p, a 120 FPS
+cap, vblank 120, and the 64 KiB buffer experiment. Shader reuse stayed on. Vertex
+reuse and all extra probes stayed off. Mailbox still fell back to Fifo.
+
+This time I changed only the effect level between these four runs. Perf 7 adds
+four cuts to perf 3: dynamic light shadows, SSAO, depth of field, and bloom. That
+means fewer shadows, less shading in corners, less lens blur, and less glow.
+The picture changes. These are not free frames.
+
+| Effect level | Average FPS | 1% low FPS | Worst frame | Frames over 50 ms |
+| --- | ---: | ---: | ---: | ---: |
+| Perf 3 | 56.28 | 28.94 | 41.74 ms | 0 |
+| Perf 7 | 71.11 | 38.61 | 41.64 ms | 0 |
+| Perf 3 again | 56.38 | 33.62 | 51.31 ms | 2 |
+| Perf 7 again | 71.34 | 36.59 | 58.26 ms | 1 |
+
+Each test used fresh copied saves, locked controls, 30 seconds of warmup, and
+60 seconds of frame logging. I checked the lamp and camera view at both ends.
+Both lighter-effects runs beat both normal-effects runs in this view. Other
+apps and focus were not tracked through the whole test, and I have not repeated
+combat or sound checks. This is useful progress, not a 90 FPS gameplay result.
+My usual 1080p / 60 cap / perf 3 profile stays intact.
+
+I then tried perf 7 at 720p with the same build and flags. That one-minute run
+averaged **73.75 FPS**, with a **39.39 FPS 1% low**, a **33.41 ms worst frame**,
+and no frames over 50 ms. The view matched at both ends. It was one run, and the
+small difference does not make 720p a proven win. Cutting the pixel count did
+not get this scene to 90 FPS.
 
 ## Other paths I checked
 
