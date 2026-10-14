@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      b5702ebda1e28c3785bfa0475cd16f62fc50edd8eb5f4ab2967f32c6323ad3a5
+SHA256:      b73dbdaee8b0c804f34428faf557b8ad68757a1b65b20612178db4ad64f0139d
 Chain:       solana-mainnet
-Tx:          3nZxKrkVc6wRNCrGQ2zQ1PfF4B7wsSqGiTKJFv5uMzonRiAEc3pBB1o9yM8PQfcAkxfhP5jvB2zchnMGqtDBcT5Z
+Tx:          254BKzEsroFY1CzMmfmbRWY1PFoJqBnmw1gj6E5LK6w5wMtFLNroiHY6WZVuttpdoKXuYRvSJTENRovqKE85UVcH
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -202,3 +202,5 @@ no API key, $0).
 2026-10-13: I checked the current shadPS4 upstream tip in an isolated checkout. It had no measured renderer speed change; the result is recorded in PERFORMANCE.md.
 
 2026-10-13: I made Vulkan core validation opt-in for play after a private title-route comparison. The measured gain is diagnostic only; real gameplay still needs a matching route.
+
+2026-10-13: I tried CUA keyboard, space, keypad, Return, and a private left-mouse Cross binding. The title menu still did not start offline play, so the faster captures remain menu-only. I stopped the trial and left the public profile unchanged.
