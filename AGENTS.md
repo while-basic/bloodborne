@@ -4,9 +4,9 @@ Version:     v2.15.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      0b83fb69d7fe7478792c48e4ff04cc008da43ba2bd95449e76cac03cb34f721e
+SHA256:      258d34028c4aa7410d3dd9c1e5dd9c550202ac26baef45f482f9b9d9c5b3f54e
 Chain:       solana-mainnet
-Tx:          5QYYsTt7xVRdXU6YTZa9xkzHNoEmMs8hoap2geN62mNHofWuFLPQpZgmHSn1ZtPdZKrQVtnSkmaXdfXmiUfVfVFx
+Tx:          58MTkX2q63UFKkUHtjPGa3RvnRC8jv4AL12YNYVXeG6rEbxXa6KkRoNCAbbnqV2EfxiEdEpHHUvMNYLtMAzL4Z5Q
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -205,3 +205,4 @@ no API key, $0).
 
 2026-10-13: I tried CUA keyboard, space, keypad, Return, and a private left-mouse Cross binding. The title menu still did not start offline play, so the faster captures remain menu-only. I stopped the trial and left the public profile unchanged.
 2026-10-13: I set the stopping point after pushing `46ae063` to `main`. The public docs and validation toggle are delivered; only repeated visible 90+ FPS gameplay remains open.
+2026-10-14: I resumed the private runtime from the isolated checkout, reached the title menu at a visible 60 FPS, and tested the configured `Down`, `Return`, `n`, and `KP_2` paths. The offline route still did not start; I stopped the emulator cleanly. 90+ FPS gameplay remains unverified.
