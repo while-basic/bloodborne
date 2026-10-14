@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.20.0
+Version:     v2.21.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-14
-SHA256:      9a5647754e66561dc98200d07ff5cd8757070b6cd6ffb685c0e377eb05ff2b76
+SHA256:      9d5eef6b58c3567f6d1fd56518f8f76de7c8ad6e791209d8c0d1dadc76b0acda
 Chain:       solana-mainnet
-Tx:          C64eqjS1qaZqmvarzSAMP4oBE1DQ45SxZXM6fU8i3gWJ4jUXMC4aMSHXc4z3skjXGuwSpxt5tpZUSYVmBmBUqLW
+Tx:          zs9CJTHZmv28R881yXtNRfgWd8aGWcWS4Wh9J3VXSXN4viKJZQb4PCh6djVxswqK1QuJsLSWEpCcbE2ik3UNhqH
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -221,3 +221,4 @@ no API key, $0).
 2026-10-14: I added the faster bbport engine to the PS4-to-Mac walkthrough and the setup and frame-hunting prompts. Docs only; the crowd fight on bbport is still unmeasured.
 2026-10-14: I fixed `--engine bbport --stats` crashing when quitting cut the last log row short. My first bbport crowd run felt smoother: median 60 FPS, 10% low 60, 9% of frames under 58, with a few long hitches.
 2026-10-14: I patched bbport so a half-written vertex format (the `data_format=15` crash) gets a stand-in instead of stopping the game, and added `--bbport-src` to run my own build. Built it; a long play test still has to prove it.
+2026-10-14: I added `--fps-size` and a bbport overlay patch that draws the FPS counter bigger on a darker panel, so viewers can read it.

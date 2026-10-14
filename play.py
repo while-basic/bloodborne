@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.6.0
+# Version:     v1.7.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-14
-# SHA256:      1d3dfd8f932616c2ffa5419eca1bf062dd79a261d737ba20cf54fb433bd58df2
+# SHA256:      399b7791561b77eea2fbe5d7ca39a0abc2d99c156a26861ede697d152c3cd61c
 # Chain:       solana-mainnet
-# Tx:          VNtNu64BxhwtYFaTocSRo1LSTiy9oEqAQp4KVjL86M9gRcX8XShtQ9xYXiBgGLdMY5Soas1CSuH9SGve1vrAV13
+# Tx:          3bd8kbe1jthHxRJGFMUgE7iZH7umU8GVDkqMfhBSGZhUVYXZ63GWVxbwjHpaUt6XA9m1ANZKnhZRcmWGdsHthaeH
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -232,6 +232,8 @@ def launch_bbport(args, parser):
     if args.fps == 120:
         parser.error("bbport takes --fps 60 or 90.")
     run = Path(args.bbport_src).expanduser() / "tools/macos/run.sh" if args.bbport_src else BBPORT_RUN
+    if args.fps_size > 1 and not args.bbport_src:
+        parser.error("--fps-size needs --bbport-src (the release bbport has no counter size setting).")
     if args.bbport_src and not (run.is_file() and (run.parents[2] / "out/bb-probe").is_file()):
         parser.error(f"No built bbport checkout at {args.bbport_src} (needs tools/macos/build.sh first).")
     if not run.is_file():
@@ -254,6 +256,8 @@ def launch_bbport(args, parser):
     env = dict(os.environ, BB_DATA_DIR=str(BBPORT_DATA), BB_GAME_DIR=str(GAME_MERGED), BB_FPS=str(args.fps),
                BB_OUTPUT_RES=f"{width}x{height}", BB_RENDER_RES=f"{width}x{height}",
                BB_PATCHES=";".join(patches), BB_FULLSCREEN="1" if args.fullscreen else "0")
+    if args.fps_size > 1:
+        env["BB_FPS_SCALE"] = str(args.fps_size)  # needs a --bbport-src build with my overlay patch
     if not args.no_log:
         env["BB_SAVE_LOG"] = "1"  # per-frame CSV in runtime/bbport/logs/
     build = f"own build {args.bbport_src}" if args.bbport_src else BBPORT_VERSION
@@ -273,6 +277,8 @@ def main():
     parser.add_argument("--install", action="store_true", help="with --engine bbport: download and check it")
     parser.add_argument("--bbport-src", metavar="DIR",
                         help="with --engine bbport: run your own built bbport-mac checkout instead of the release")
+    parser.add_argument("--fps-size", type=int, choices=range(1, 7), default=1, metavar="1-6",
+                        help="with --bbport-src: draw the FPS counter this many times larger (3 suits a recording)")
     parser.add_argument("--stats", action="store_true", help="with --engine bbport: FPS summary of the last session")
     parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
     parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",

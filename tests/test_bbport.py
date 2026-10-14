@@ -108,5 +108,13 @@ class BbportTests(unittest.TestCase):
         self.assertEqual(json.loads(stdout.getvalue())["engine"], str(checkout / "tools/macos/run.sh"))
 
 
+    def test_fps_size_needs_own_build(self):
+        stderr = io.StringIO()
+        with patch("sys.argv", ["play.py", "--engine", "bbport", "--fps-size", "3", "--check"]), \
+                contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
+            play.main()
+        self.assertIn("--bbport-src", stderr.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

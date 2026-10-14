@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v3.4.0
+Version:     v3.5.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-14
-SHA256:      61aade409ef97510ada088f74f6e35e6e2bb98232038ebeb35ae044c7bcc2143
+SHA256:      e8d300ee09dd816c3ea84be980978c11d2470223a4fd497e99f88a1e9ba4dbda
 Chain:       solana-mainnet
-Tx:          vRqb7WgwjG7aF8hHAM5sxSX2uXVspTc7b1c9FySGVg3WWA6ngbnbJRS7nvdoGfU7NjBTFj8BeGKV9DVpfZteVzt
+Tx:          2xweiW8w5siBF6PEj7KzL6ptygjw9eC8SSQc6sawU2PWqGD4ZSzwim51THqH3Uwpm99Sx7zBAGgNJYqkcHYebA2C
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -260,6 +260,9 @@ git apply /path/to/this/repo/patches/bbport/vertex-format-standin.patch
 bash tools/macos/setup_deps.sh && bash tools/macos/build.sh
 cd /path/to/this/repo && python3 play.py --engine bbport --bbport-src ~/Documents/bbport-mac
 ```
+
+Streaming or recording? Apply `patches/bbport/big-fps-counter.patch` too and add
+`--fps-size 3` so viewers can read the FPS counter.
 
 ## Turn the knobs
 

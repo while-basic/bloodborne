@@ -1,0 +1,33 @@
+diff --git a/gpu/shim/bbport_overlay.cpp b/gpu/shim/bbport_overlay.cpp
+index 3763057..41dccf5 100644
+--- a/gpu/shim/bbport_overlay.cpp
++++ b/gpu/shim/bbport_overlay.cpp
+@@ -593,11 +593,19 @@ void FpsCounter() {
+     ImGui::SetNextWindowPos(
+         ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - pad, viewport->WorkPos.y + pad),
+         ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+-    ImGui::SetNextWindowBgAlpha(0.5f);
++    // bbport (CSR): BB_FPS_SCALE=N draws the counter N times larger on a darker panel, so it
++    // stays readable in recordings and streams.
++    static const float fps_scale = [] {
++        const char* env = std::getenv("BB_FPS_SCALE");
++        const float v = env ? float(std::atof(env)) : 1.0f;
++        return v >= 1.0f && v <= 6.0f ? v : 1.0f;
++    }();
++    ImGui::SetNextWindowBgAlpha(fps_scale > 1.0f ? 0.75f : 0.5f);
+     ImGui::Begin("##fps", nullptr,
+                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                      ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav |
+                      ImGuiWindowFlags_NoFocusOnAppearing);
++    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * fps_scale);
+     const auto& s = BbSettings::Get();
+     ImGui::Text(BbSettings::MenuText("%.0f FPS  %.1f ms  %s", "%.0f FPS  %.1f мс  %s"),
+                 frame_ms_avg > 0.0f ? 1000.0f / frame_ms_avg : 0.0f, frame_ms_avg,
+@@ -607,6 +615,7 @@ void FpsCounter() {
+                 : s.upscaler == BbSettings::UpscalerTaa    ? "TAA"
+                 : s.upscaler == BbSettings::UpscalerMetalFx ? "MetalFX"
+                                                            : "");
++    ImGui::PopFont();
+     ImGui::End();
+ }
+ 
