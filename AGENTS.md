@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.9.0
+Version:     v2.10.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      43ff2a2a990456995b00ac616c40872638d23698bc30147dbfc3ad2df1e452d6
+SHA256:      943178ef1ae796808e8eb9bf7ede601690d2a4e168532ba017751e225f4e73e5
 Chain:       solana-mainnet
-Tx:          3Z8Uvb4MUCFQBzJ5ivp9mPABtNfErE2LKAZ3RDc9gHXvCPD4upGfpDgjBG15TwMcYmNJ3Hw7yUWJMx8oRcJuz2wZ
+Tx:          5BMDiEPT9zkpuuJ2ANcG1pLAatdRXXskD7pBW8FyqG1PtTKW57inQycaqJnbL6Vgg65mqqd1Kf1Sk9v5UFjcJVuq
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -74,10 +74,25 @@ checks, and performance notes before changing the setup.
 
 ## Completion note
 
-2026-10-13: I added a checked frame-clock patch and recorded new CPU, clock,
-and memory tests. Wider buffer handling cut counted write faults; I have not
-accepted an FPS gain from these diagnostic runs. My original saves and current
-settings match, test apps are closed, and 90+ FPS remains open.
+2026-10-13: I stopped at a clean checkpoint after publishing the frame-clock
+fix and measuring buffer work. All test apps are closed, all 16 original saves
+and current settings match, and 90+ FPS remains unverified.
+
+## Resume from here
+
+- I asked to stop this session. Do not start another benchmark until I resume.
+- My best repeated lighter-effects runs remain 71.11/71.34 FPS at 1080p.
+  The new buffer diagnostics are separate from those runs.
+- Private source `92ce9d8` adds optional normal-thread buffer timing. The Release
+  build and Intel sanitizer checks pass. The same signed app completed both
+  buffer-range trials; PERFORMANCE.md records the results and limits.
+- Buffer fetch calls occupied 16–19% of the diagnostic windows. Nested times
+  overlap and include probe overhead; they are not CPU or GPU usage figures.
+- My next lead is existing Metal GPU start/end feedback in `kk_queue.c` and
+  `mtl_command_queue.m`. I inspected it but made no change or GPU capture.
+- The exact builds, private commits, trial paths, and preservation checks are
+  saved in ignored `runtime/optimization-state.json`. Keep all probes off for
+  normal FPS tests. The external SSD stays off-limits.
 
 ## Tests still open
 
@@ -85,7 +100,7 @@ settings match, test apps are closed, and 90+ FPS remains open.
   lock-free counters. The Release build and signal/concurrency checks pass.
   Clock-aligned repeats counted about 122 versus 900 write faults per frame
   at 64 KiB versus the original range. Counts do not measure handling time.
-  Normal-thread buffer work is the next lead; keep probes off for FPS tests.
+  Normal-thread buffer work is now measured below; keep probes off for FPS tests.
 - The public frame-clock patch builds and passes checks on the actual recorder,
   including stale-file refusal. Live clock gaps were under five microseconds.
   Runtime metadata keeps the exact signed builds and separates the later
@@ -113,7 +128,7 @@ settings match, test apps are closed, and 90+ FPS remains open.
   private and off. Depth-state creation measured only 1.45% of wall time in
   one diagnostic. Optional probes and thread-priority changes stay off for
   normal comparisons. PERFORMANCE.md carries the earlier results.
-- Keep the optional buffer patch off by default. Memory tracking is the next
+- Keep the optional buffer patch off by default. GPU completion timing is the next
   lead. Mesa already skips replay copies for one-time command buffers;
   do not duplicate that work or skip barriers without proving correctness.
 - Raw captures, exact source patches, build hashes, and the next trial stay

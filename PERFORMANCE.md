@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v2.9.0
+Version:     v2.10.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      83b374e4a200bd320d5ac98cef583af53f3ba491a1bfb3391712d2961ee7fb06
+SHA256:      3f35c289430838117cda3b9e8686c1d55034b55c8d79a8132dd0b602bc6943b6
 Chain:       solana-mainnet
-Tx:          F946NLDY3guj86vsVAShbGxrbjHPrMKUwF4yAgmWQEh7uTmRwqz6pezZLWsjTaAd75jnTfTiKgWNfeqTgKcwpu3
+Tx:          3ZtzXonvDC7EW9AUaymHmG9mHwHy3naAxsbpWbvk3EJqtNQ1vZxnD22axDZUxJQbGFgbvz6zFZQTfgbUrypUc3pQ
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -432,8 +432,41 @@ per presented frame**. The matching original-range run counted about **900**.
 Their counter windows lasted 59.15 and 59.40 seconds. Both clock checks took
 less than five microseconds. These are still approximate ratios: the counters
 are read one by one, and neither run controlled other apps. I have not accepted
-an FPS gain from this pair. My next step is to measure the normal buffer work
-that follows these faults, keeping timing calls out of the signal handler.
+an FPS gain from this pair. I then measured the normal buffer work that follows
+these faults, keeping the new timing calls out of the signal handler.
+
+## Time spent on buffer work
+
+I added an optional timer to the private test build. It measures time inside
+buffer calls. It stays off by default. The Release build and sanitizer checks
+pass, including checks for several threads, nested calls, and old log files.
+
+I tested the 64 KiB group and the original range with the same signed app,
+settings, patches, copied save, and locked lamp view. Each capture lasted about
+60 seconds. The timer covered 59.00 and 59.04 seconds of full log windows.
+
+| Time inside a call, as part of the 60-second test | 64 KiB | Original range |
+| --- | ---: | ---: |
+| Fetch a buffer, including work inside it | 18.64% | 16.45% |
+| Upload a small stream buffer | 5.68% | 4.59% |
+| Track changed ranges | 2.73% | 2.59% |
+| Copy changed data to staging memory | 1.28% | 0.71% |
+| Queue buffer upload commands | 1.70% | 1.91% |
+
+These times overlap. **Do not add the rows.** They include time spent waiting
+and the timer's own cost. They do not measure CPU use or time on the GPU.
+The wider setting also copied more data per staging request, so fewer faults
+come with a tradeoff.
+
+The diagnostic frame logs averaged 35.16 and 26.36 FPS. Other apps were not
+controlled, and I did not measure the timer's overhead. I do not count this
+pair as an accepted speed gain or compare it with the earlier 71 FPS runs.
+It does not show that buffer work alone can close the gap to 90 FPS.
+
+I stopped here with both test apps closed. All 16 original save files and my
+current settings still match. Next time, I can use the driver's existing GPU
+start/end feedback to separate GPU work from time on the host. I inspected
+that path but have not changed it or taken a GPU timing capture.
 
 ## A fresh clock check
 
