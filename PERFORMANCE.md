@@ -4,9 +4,9 @@ Version:     v2.14.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      fe1f01917db47a6eb6f5653035c0ac620c4c0a5195225ca904fedb02a11a85dd
+SHA256:      5f2523d4a9175af7efeab2137371dc9822b4f8df322ea9b597d31db69a58675a
 Chain:       solana-mainnet
-Tx:          5zKpMKghiU6TdKL6MvgXNY4PWhkszoXdqqKfw5XCWWjwHhM9D62HFXhbA1259m4wBwKEmos71deZpcDCVwfK21oG
+Tx:          2zZrwjkQmF8tpM25PsFbjxSCgFhEcsnDJy5ohQJWd4yYsQvK5GBWmKp8wm8FcFLobrDFCK3wxRBQaZ66ziZsELVM
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -536,6 +536,12 @@ I also checked the current upstream tip, [`7295d12`](https://github.com/shadps4-
 in a clean isolated checkout. Its changes are network notifications, settings cleanup, and
 null index safety; I found no frame-pacing or renderer speed change to claim. The clean
 upstream build could not finish because a nested dependency checkout was incomplete.
+
+I found one launcher setting worth keeping: the copied benchmark had Vulkan core validation on.
+With the same private signed build and copied state, a 50-second title-route capture rose from
+75.83 FPS with validation on to 101.75 FPS with it off. A second remapped trial measured
+85.87 FPS. These are menu captures, not gameplay, so I made validation off the play default but
+did not call this a 90+ FPS result. `--keep-vulkan-validation` restores the old debug setting.
 
 That source accepts an ARM build target, but its
 [`RunMainEntry`](https://github.com/shadps4-emu/shadPS4/blob/e0a466753a1aacbc8db8253be685bf7ab4d9daae/src/core/linker.cpp#L41-L64)

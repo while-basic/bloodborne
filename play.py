@@ -4,9 +4,9 @@
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
 # Date:        2026-10-13
-# SHA256:      d9ac361899d50f9eb95967b3fee02971320cf79eb4593574e906a95ae2bd8d66
+# SHA256:      bed9e07c74b41cdfe52a6f4caf4418c4ef5656e7fe98724bd5d6e23e6200f2dc
 # Chain:       solana-mainnet
-# Tx:          36K8UDAstDJw8ePBWowrCowzXAEg7BHYXjwK6FA3mWNfiPsc359GRKs2QFyjbU1LDQBK9oa35pBQYmsV9AJR9xtX
+# Tx:          3wGdXChGpiG9yUPfmeQKsnd9i5VvzDHYAhTp8VoGKFuYf9XaSfsqUms8oxeevMpwSxGfzkoLPmLa21ojQbQZhTk6
 # License:     The Unlicense (public domain dedication)
 """Launch the local Bloodborne copy with one explicit display profile.
 
@@ -111,7 +111,8 @@ def write_config(args):
     # The resolution patches allocate bigger frame buffers; they need extra direct memory.
     config["General"].update(extra_dmem_in_mbytes=8192 if args.resolution == "4k" else 4096,
                              show_fps_counter=True)
-    config["Vulkan"]["pipeline_cache_enabled"] = True
+    config["Vulkan"].update(pipeline_cache_enabled=True,
+                             vkvalidation_core_enabled=bool(args.keep_vulkan_validation))
     config["Log"]["enable"] = not args.no_log
     config["Log"]["sync"] = False  # never block game threads on log writes
     temporary = CONFIG.with_suffix(".tmp")
@@ -137,6 +138,8 @@ def main():
     parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
                         help="swapchain present mode to request; support depends on the Vulkan driver")
     parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
+    parser.add_argument("--keep-vulkan-validation", action="store_true",
+                        help="keep Vulkan core validation on for debugging; slower for play")
     parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
                         help="also enable this patch by its exact XML name (repeatable)")
@@ -156,6 +159,7 @@ def main():
     if args.check:
         print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
                           "vblank_hz": args.vblank, "present_mode_requested": args.present_mode,
+                          "vulkan_validation_core": args.keep_vulkan_validation,
                           "fullscreen_mode": args.fullscreen_mode if args.fullscreen else "windowed",
                           "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
                           "profile_dir": str(PATCH_DIR), "local_files_present": True,

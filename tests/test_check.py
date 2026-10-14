@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
@@ -60,6 +61,7 @@ class DryRunTests(unittest.TestCase):
         self.assertFalse(result["gameplay_verified"])
         self.assertEqual(result["fps_target"], 60)
         self.assertEqual(result["vblank_hz"], 60)
+        self.assertFalse(result["vulkan_validation_core"])
         self.assertEqual(before, self.snapshot())
         self.assertFalse(self.profile.exists())
         run.assert_not_called()
@@ -79,10 +81,34 @@ class DryRunTests(unittest.TestCase):
         self.assertEqual(result["vblank_hz"], 120)
         self.assertEqual(result["present_mode_requested"], "Fifo")
         self.assertEqual(result["fullscreen_mode"], "windowed")
+        self.assertFalse(result["vulkan_validation_core"])
         self.assertFalse(result["gameplay_verified"])
         self.assertEqual(before, self.snapshot())
         run.assert_not_called()
         launch.assert_not_called()
+
+    def test_check_can_keep_vulkan_validation_for_debugging(self):
+        output = io.StringIO()
+        with patch("sys.argv", ["play.py", "--check", "--keep-vulkan-validation"]), \
+                patch.object(play.subprocess, "run") as run, \
+                patch.object(play.subprocess, "call") as launch, \
+                contextlib.redirect_stdout(output):
+            self.assertEqual(play.main(), 0)
+        result = json.loads(output.getvalue())
+        self.assertTrue(result["vulkan_validation_core"])
+        run.assert_not_called()
+        launch.assert_not_called()
+
+    def test_write_config_disables_validation_by_default(self):
+        self.config.write_text(json.dumps({"GPU": {}, "Vulkan": {}, "General": {}, "Log": {}}))
+        args = SimpleNamespace(resolution="1080p", vblank=60, fullscreen=True,
+                               fullscreen_mode="borderless", present_mode=None,
+                               no_log=False, keep_vulkan_validation=False)
+        play.write_config(args)
+        self.assertFalse(json.loads(self.config.read_text())["Vulkan"]["vkvalidation_core_enabled"])
+        args.keep_vulkan_validation = True
+        play.write_config(args)
+        self.assertTrue(json.loads(self.config.read_text())["Vulkan"]["vkvalidation_core_enabled"])
 
     def test_invalid_vblank_fails_before_reading_or_writing_settings(self):
         for rate in ("-1", "0", "29", "1001", "4294967296"):

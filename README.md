@@ -4,9 +4,9 @@ Version:     v3.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      72ed4f01daf2b1e64e33b8d74feaac2320fee4e8c22b1f96137fde06f49e27f3
+SHA256:      8163b4ad04afc42d2e1cdf8edb175d52dd839089fab6ff1b8d1c263630041bba
 Chain:       solana-mainnet
-Tx:          5SVaKyoYgfZ4H49N2VhYWH4nUYTmEwGz8D1Hs6nDuQxieUNpaH7yLPEaosrrLLppViekSKvDRUKQYMCjq7SshECq
+Tx:          7pBAUqa8CEm4AhM59dSbp5Sb6sHT3qo91J7yYDsuTgsdcgnnS38CMWjnYAXzBx3Pajrm9fqEX27YepiAtki1cVJ
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -172,11 +172,16 @@ python3 play.py --resolution 1440p --fps 90 --perf 4
 python3 play.py --extra "Disable AA" --check
 python3 play.py --no-log
 python3 play.py --keep-facegen
+python3 play.py --keep-vulkan-validation  # debugging only; slower
 ```
 
 I support 720p, 900p, 1080p, 1440p, and 4K, with 60, 90, or 120 FPS caps.
 These are choices to test. **A 90 FPS cap does not create 90 FPS.**
 Keep 720p and 900p as experiments; my current baseline is 1080p.
+
+The launcher turns Vulkan core validation off for play. It adds checks to many
+graphics calls and can cost a lot of speed. Use `--keep-vulkan-validation` only
+when I am chasing an emulator bug.
 
 | Perf level | Added change |
 | --- | --- |
