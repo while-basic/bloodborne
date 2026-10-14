@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Roadmap
-Version:     v2.0.0
+Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      3c00c842495c94a3d103eef45d073fa667d00bf00ef1314438ddab1a3e8538dc
+SHA256:      6dd2ccc3abf481ca049e79e6de64f0d3b7db8051dfdbfdd8c9d0c2d9b9a92825
 Chain:       solana-mainnet
-Tx:          sc24NQcFjUZiHQFaes5ShGF69HTdF9NuJzpqzFghdZ69QozHpYmRJwGRk4zHC3E2DdUt73M44GNkrRNHkDeRzy7
+Tx:          5GSaQdEpASCusdwZ4ERi4xUgvmzcvN85Bq13ZzdHBCeBesMGC9Pe6A1A6JHuUWPWWE7aLgocZmhq4VeUFhke5BbW
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -31,9 +31,15 @@ people play their own copy on more computers.
 These checks cover my setup and the tools in this repo. I have not personally
 tested every firmware route linked in the [tutorial](PS4-TO-MAC.md).
 
-## Next: 90+ FPS on Mac
+## Next: 60+ FPS in crowds, then 90+
 
-- [ ] Fix the test scene, route, camera, and test length.
+My crowd test is the bonfire mob in Central Yharnam. There my Mac holds about
+40–48 FPS. Settings alone don't fix it: the slow part is the Mac's processor
+translating PS4 game code. So I'm also testing
+[bbport for Mac](https://github.com/bmy/bbport-mac), a Bloodborne-only project.
+
+- [x] Fix the test scene and route (Central Yharnam crowd).
+- [ ] Hold 60+ FPS through the crowd fight, measured, not guessed.
 - [ ] Record the engine build, patch hashes, power mode, and display refresh.
 - [ ] Capture real FPS and frame times across repeated warm-cache runs.
 - [ ] Find the slow work in game execution, graphics, or frame pacing.
@@ -51,6 +57,8 @@ an empty scene does not check it either. See [my notes](../PERFORMANCE.md).
 - [ ] Test each platform's Vulkan drivers and emulator build.
 - [ ] Check controllers, sound, fullscreen, and save/load.
 - [ ] Publish tested hardware and clear setup steps.
+
+The full plan and a paste-in prompt live in [WINDOWS-LINUX.md](WINDOWS-LINUX.md).
 
 shadPS4 already supports more than Mac. This small wrapper still needs its own
 work and tests on those systems.

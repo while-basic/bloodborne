@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.15.0
+Version:     v2.16.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-13
-SHA256:      c53c986b57881d396df08eed6814df903e1c7cf687e7229a3158cb02562590be
+SHA256:      ff6444bdf344e543a419c262e413e7bb8924c5de7f9460f3dd05afb1edbbc584
 Chain:       solana-mainnet
-Tx:          4fcEpjgi5MKjdmByv8Ks39TcJAqngL9yqxbFPT4set3ryJ5b9vGcdmEnm8SoeKwuwLM5BnEVDvgwi2tmmzh7wLw9
+Tx:          5Eoz62hSZeqH9P3PWMLNLiU5dgbhGr6mte916jLmsg2d6teAFoMqT7FCE94eKZQWAAzcbjmKzPy9wrNGuaGSTnVY
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -73,6 +73,11 @@ checks, and performance notes before changing the setup.
   Browser-local execution versus streaming remains open.
 
 ## Completion note
+
+2026-10-13: I rewrote the README for people who don't code: a plain-words
+intro, a word list, and simpler setup steps, in the same voice. My goal is now
+60+ FPS in the Central Yharnam crowd, then 90+. I added docs/WINDOWS-LINUX.md
+with a paste-in prompt. bbport for Mac is my next lead; it is not tested here yet.
 
 2026-10-14: I stopped at a clean checkpoint after publishing the frame-clock
 fix, measuring buffer work, and rerunning GPU feedback with an explicit log.
