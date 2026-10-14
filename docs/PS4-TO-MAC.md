@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne PS4 to Mac Walkthrough
-Version:     v2.0.0
+Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-13
-SHA256:      f56b78cacb1988fe73d6a75b24d04732e139156fc8c3498eff6641995a474f81
+Date:        2026-10-14
+SHA256:      f06f1939548b861f40be1fd4784941a5521d094b12aa4cdfe51515dae2c86f4f
 Chain:       solana-mainnet
-Tx:          3PM6VCxEEoFN4FuwQM4yhfgvJKY89gNb86uwdMBHevP1bpNMFypKi28ZrTYdHKp7EeoFiMWzfj2A74mkPsdxS5Eh
+Tx:          4qp5ZLChS9v8yV1X2VZt5fjEo9dhnvmxPxSwMg6Ta91zZBQMnxowAwvL6MC6c1jVSxmWWuSRTAmUTi9w8QuFgE7X
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -136,6 +136,7 @@ Follow [the Mac setup in the README](../README.md#mac-setup). The short version 
 6. Run `python3 play.py --check`. This checks local files. It does not launch the game or prove gameplay.
 7. Launch with `python3 play.py`, or use `Play Bloodborne.command`.
 8. Check the title screen, controls, sound, and a short walk. I report those checks separately from setup and FPS.
+9. Want more frames? Try the faster engine: `python3 play.py --engine bbport --install` once, then `python3 play.py --engine bbport`. It copies my shadPS4 save over once and leaves the original alone. At my first lamp it held 56–59 FPS where shadPS4 gave 43–48. The first launch can sit on a black screen for a few minutes while shaders build. See [the bbport section](../README.md#try-the-faster-engine-bbport).
 
 Once that works, I agree on one scene, picture quality, and test length before measuring FPS. I keep the 1080p / 60 cap / perf 3 profile as my way home.
 

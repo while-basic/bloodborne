@@ -1,12 +1,12 @@
 ```text
 Document:    My Codex and Claude Setup Prompts
-Version:     v2.0.0
+Version:     v2.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-13
-SHA256:      c207f982c0bb249d27ee1d036639868485015702a46ae630941da71d716f2c0f
+Date:        2026-10-14
+SHA256:      252a08fe7812c4c3e5a160873714c39aa2be6f17318d4ca2a4bc9200edcd1437
 Chain:       solana-mainnet
-Tx:          2Wggk1WB5cUxMfVjS9uSp8WQoJR9DoSk4CPZbgKbcsZQo8R5A9UBSAG1widzuBGckNNEsMidDCU2prKbAqsnjntE
+Tx:          4LafLqwzmpsNWCD5VpNfAAXcf9djXf1jncY74X1JNegwFDGd8hyXfRVAdXWyH7rs7QYfkE4D3EtSfaTnCjGePmfX
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -89,6 +89,12 @@ Tell me where each backup is. The launcher's backup covers config only.
 After any running emulator closes normally, launch at 1080p / 60 cap / perf 3.
 Verify the game window, then controls, sound, and actual gameplay. Ask me to
 confirm what you cannot observe. Report setup checks and gameplay separately.
+
+Once shadPS4 works, offer the faster bbport engine from the README. Run
+python3 play.py --engine bbport --install (it checks the download's SHA-256),
+then launch with --engine bbport. It copies my shadPS4 save once; keep the
+shadPS4 setup as a backup. A black screen during the first shader build is
+normal. Afterward, python3 play.py --engine bbport --stats sums up FPS.
 Keep private files local. Do not push, upload, or use GitHub Actions.
 ```
 
@@ -116,8 +122,8 @@ roadmap. Ask permission for performance tests and agree on the resolution,
 picture quality, test length, and scene before changing settings.
 
 Keep a working emulator and backups of config, patches, and saves. Record
-hardware, OS, display refresh, power mode, game version, repo and engine
-commits, engine/patch hashes, resolution, FPS cap, vblank, and enabled patches.
+hardware, OS, display refresh, power mode, game version, engine (shadPS4 or
+bbport), repo and engine commits, engine/patch hashes, resolution, FPS cap, vblank, and enabled patches.
 
 Use the same scene, camera, route, and warm shader cache. Change one thing
 at a time. Repeat runs and record FPS/frame times, stutter, crashes, and visual
@@ -129,5 +135,6 @@ scene. Do not run heavy Metal/Instruments tracing during combat. Don't infer
 FPS from CPU use. A higher cap, static scene, or short peak cannot prove steady
 90+ FPS. Keep unmeasured results blank and roll back failed experiments.
 
+For bbport, run python3 play.py --engine bbport --stats after each session.
 Keep raw evidence local. Do not upload, push, or use GitHub Actions.
 ```

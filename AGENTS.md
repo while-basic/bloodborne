@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.17.0
+Version:     v2.18.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-13
-SHA256:      9371313b3b7754d7b77efc4c789a2c4e0355052bd913c9f5b2f679494ad0ed87
+Date:        2026-10-14
+SHA256:      b66ba978f10c2b9e409241c41757dafabc31e20b8ad4ebecad69edd953241d53
 Chain:       solana-mainnet
-Tx:          ACg3TrLU834NNCQryqDcvhzD16bVBFmAZU1eHKyLhdPgkg71ZxnQcTukFHYxGnCzYRCsKX49i6CRogXy6Zuf83d
+Tx:          5rYugCBKqg5SfNZjPRYGYErn1rLKfot9Hojw5i4j5DKGkGmS8VNkVFjgi88nA6cf5dLVTEtsGczhXDVQhMtG8T37
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -218,3 +218,4 @@ no API key, $0).
 2026-10-13: I set the stopping point after pushing `46ae063` to `main`. The public docs and validation toggle are delivered; only repeated visible 90+ FPS gameplay remains open.
 2026-10-14: I resumed the private runtime from the isolated checkout, reached the title menu at a visible 60 FPS, and tested the configured `Down`, `Return`, `n`, and `KP_2` paths. The offline route still did not start; I stopped the emulator cleanly. 90+ FPS gameplay remains unverified.
 2026-10-13: I stopped the latest runtime after a visible 90 FPS title-menu overlay at 1080p with vblank 90. `Down` plus `KP_2` still did not start offline play, so 90+ FPS gameplay remains unverified.
+2026-10-14: I added the faster bbport engine to the PS4-to-Mac walkthrough and the setup and frame-hunting prompts. Docs only; the crowd fight on bbport is still unmeasured.
