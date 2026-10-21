@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.21.0
+Version:     v2.22.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-14
-SHA256:      9d5eef6b58c3567f6d1fd56518f8f76de7c8ad6e791209d8c0d1dadc76b0acda
+Date:        2026-10-21
+SHA256:      77a952565312a0605db9b861d619703486a429c33ec3661ac16a3e12804803e9
 Chain:       solana-mainnet
-Tx:          zs9CJTHZmv28R881yXtNRfgWd8aGWcWS4Wh9J3VXSXN4viKJZQb4PCh6djVxswqK1QuJsLSWEpCcbE2ik3UNhqH
+Tx:          3frDFAEAcnVSyNxRKUC4ps2uXkdP5m6CFSHRdfLdFK1naTXxwQZFKmsSAi8pzt5uRuJP28x3XttAUFXzu1LrXJEP
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -73,6 +73,8 @@ checks, and performance notes before changing the setup.
   Browser-local execution versus streaming remains open.
 
 ## Completion note
+
+2026-10-21: I added three weapon renames (198 English entries) and CSR loading labels; 23 tests and archive/font checks pass. The separate `runtime/mods/csr/` game, copied saves, launcher, and manifest stay private; in-game visuals and PS4 installation remain unverified.
 
 2026-10-13: I added `--engine bbport` to play.py. It installs the pinned bbport
 for Mac release under runtime/ (SHA-256 checked), merges the 1.09 update with
