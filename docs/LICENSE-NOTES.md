@@ -1,33 +1,32 @@
 ```text
 Document:    My Bloodborne Launcher License Notes
-Version:     v1.4.0
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-14
-SHA256:      59ebfc6ae8277ee2c9c9b27c3b51263ce0329fb9034fb6661d83580d4ddbbf25
+Date:        2026-10-21
+SHA256:      7cab2cd12468e4e3fe85259ee609e6d943e4bb1999d95a8e522d12c8e131bb03
 Chain:       solana-mainnet
-Tx:          4j28Msvcp14mG2E2VnY72VfgypseYo5VxrDdpx7CRKqjfi7qBXeV5D9fKcLZbQ958juz5GBX6JVCeJHNXcapbyxN
+Tx:          3hwYrDTSE59AB7FPzcaXVasJq6rBaiERwDBkVfbgwZJY8p5ce526TUxFr9NmEJgYoGZzLdkXZRVLeukYjydrQqYK
 License:     The Unlicense (public domain dedication)
 ```
 
 # Use it, change it, share it
 
-I release my original code, tests, and docs in this repo under
-[the Unlicense](../LICENSE). That includes my earlier original contributions.
+I release my original code, tests, and docs under [the Unlicense](../LICENSE).
+That includes my earlier original contributions. I keep the standard text
+from [unlicense.org](https://unlicense.org/UNLICENSE) unchanged in LICENSE;
+its document header lives here instead.
 
-I keep the standard text from [unlicense.org](https://unlicense.org/UNLICENSE)
-unchanged in LICENSE so GitHub and other tools can recognize it. Its document
-header lives here instead.
+This does not cover Bloodborne, bbport, shadPS4, their assets, or other people's
+tools. Their rights and licenses still apply. My work comes with no warranty.
 
-This does not cover Bloodborne, shadPS4, third-party patches, or their assets.
-Their rights and licenses still apply. My original work comes with no warranty.
+`python3 play.py --install` downloads [bbport for Mac](https://github.com/bmy/bbport-mac)
+from its official release page and checks the archive's SHA-256. The app stays
+under ignored `runtime/`; it is not included in this repo. bbport and the
+patches under `patches/bbport/` follow **GPL-2.0-or-later**, not my Unlicense
+dedication. Their license text stays beside the patches.
 
-The frame-timing patch under `patches/shadps4/` changes shadPS4 and follows its
-GPL-2.0-or-later license. It is outside my Unlicense dedication.
-
-`python3 play.py --engine bbport --install` downloads
-[bbport for Mac](https://github.com/bmy/bbport-mac) from its own release page
-and checks the file's SHA-256 before unpacking it into `runtime/`. bbport is
-GPL-2.0-or-later. I do not include its app in this repo, and my
-Unlicense dedication does not cover it. The crash fix under `patches/bbport/`
-changes bbport code, so it follows bbport's GPL-2.0-or-later license too.
+The CSR tools use [SoulsFormats](https://github.com/JKAnderson/SoulsFormats)
+and [JPEXS FFDec](https://github.com/jindrapetrik/jpexs-decompiler) as separate
+dependencies. Keep their licenses and credits when distributing those tools.
+Do not include edited game files, fonts, textures, or saves in a public fork.

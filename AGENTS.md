@@ -1,170 +1,83 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v2.22.0
+Version:     v3.0.1
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-21
-SHA256:      77a952565312a0605db9b861d619703486a429c33ec3661ac16a3e12804803e9
+SHA256:      728a099eac2906911a79d317d95d0cba6453cb244e7a7fb8bcb06482ede80eff
 Chain:       solana-mainnet
-Tx:          3frDFAEAcnVSyNxRKUC4ps2uXkdP5m6CFSHRdfLdFK1naTXxwQZFKmsSAi8pzt5uRuJP28x3XttAUFXzu1LrXJEP
+Tx:          2UUnMx7GsGCy1DSVDu3d2KoM6ygbHXmbw1ieZsca2jqTUCtEU5SSNf1nJzPcJrQDi14Rs9L2NPsPHSh8wqCDFcrw
 License:     The Unlicense (public domain dedication)
 ```
 
 # Help me keep the hunt honest
 
-I'm Christopher Celaya, [while-basic](https://github.com/while-basic). This is
-my personal Bloodborne launcher. Read the README, tutorial, contribution
-checks, and performance notes before changing the setup.
+I'm Christopher Celaya, [while-basic](https://github.com/while-basic).
+This repo launches **bbport for Mac only**. Read README.md, the walkthrough,
+CONTRIBUTING.md, and PERFORMANCE.md before changing the setup.
 
-## Voice and public docs
+## Voice and public sharing
 
-- Write about my work as “I” and “my.” Speak to readers as “you.” Do not call
-  me “the user” or “the owner” in public docs.
-- Use short sentences and everyday words. A little fun fits; fake FPS does not.
-- My shared footage shows 50+ FPS and has reached over a million viewers.
-  That is my report, not a repeatable benchmark. Keep historical measurements,
-  later play reports, FPS caps, and new tests separate.
-- Original code and docs use the Unlicense. Keep upstream LICENSE text intact;
-  its document header belongs in docs/LICENSE-NOTES.md. Keep third-party credit.
-- New documents use the standard header fields, my name, my GitHub contact,
-  and the Unlicense. Seal changed header-bearing files with docseal on both
-  chains before commits. If it fails, stamp locally and record the reason.
-  In private upstream clones that I do not push, stamp only.
+- Write as “I” and “my,” and speak to readers as “you.” Use short, everyday
+  words. A little fun fits; fake FPS does not.
+- My earlier 50+ FPS footage reached more than a million people. That is my
+  report about the footage, not a fresh benchmark or a bbport guarantee.
+- Original code and docs use the Unlicense. Keep upstream license text and
+  credit intact. The bbport patches keep their GPL-2.0-or-later license.
+- Document headers use my name, GitHub contact, and the Unlicense. Seal changed
+  headed files on both chains before commits. If anchoring fails, stamp and
+  record why. In private upstream clones I never push, stamp only.
+- Keep games, updates, firmware, keys, saves, edited game assets, engine bundles,
+  credentials, local agent config, and raw logs out of Git. Audit staged files
+  and history before publishing. Never run GitHub Actions.
 
-## Setup help
+## Setup and preservation
 
-- Ask about exact firmware, Mac specs, game region/update, USB, Ethernet,
-  adapters, saves, free space, and protected drives before choosing a path.
-- Request permission before a system performance/load test. Explain its load,
-  duration, and limits. Honor permission already given in the current session.
-- Identify a queued PS4 system update before helping remove it. Leave game
-  updates and saves alone. Do not silently update firmware or reset a console.
-- Verify current primary sources. Do not turn a browser bug's affected range
-  into a promise of full jailbreak support for every version in that range.
-- Keep loader success, package transfer, installation, app launch, and actual
-  gameplay as separate checks. Ask what the console shows when you cannot see.
-- Do not format drives or change unrelated network settings as a shortcut.
-  My external SSD is off-limits: do not inspect, mount, read, or write it.
+- Use an isolated Git worktree for code. Run CONTRIBUTING.md checks locally.
+  Commit finished changes; merge and push only with direct authorization.
+  Keep one short completion note here after a commit.
+- Do not add standalone-engine launch paths or change another app's settings.
+  The hidden `--engine bbport` flag only keeps old bbport commands working.
+- Keep 1080p / 60 cap / perf 3 as the default. Preserve the existing bbport
+  game, settings, saves, and other worktrees. Never overwrite a good save.
+- My external SSD is off-limits: do not inspect, mount, read, or write it.
+- Before console setup, ask about exact firmware, game region/update, Mac specs,
+  USB/Ethernet gear, backups, free space, and protected drives. Check current
+  primary sources. Do not update firmware, reset a console, format drives,
+  or change unrelated networks as a shortcut.
+- Identify a queued system update before helping remove it. Leave game updates
+  and saves alone. Loader, transfer, install, launch, and actual play are
+  separate checks. Ask what the console shows when you cannot see it.
 
-## Code and delivery
+## Testing and evidence
 
-- Use Graft first for code context. If it cannot index a language or source,
-  say so once and use focused source reads. Do not keep retrying weak queries.
-- Make code changes in an isolated Git worktree. Preserve other worktrees.
-- Run CONTRIBUTING.md checks locally. Never create, trigger, monitor, or wait
-  for GitHub Actions.
-- Commit finished changes. Merge or publish only when I directly ask. Current
-  session permission does not become blanket permission for future sessions.
-- Review staged files and history. Keep games, firmware, keys, saves, emulator
-  bundles, credentials, local agent config, and raw logs out of Git.
-- After each commit, refresh one short completion note here.
+- Ask before a system performance/load test; describe its duration and load.
+  Honor permission already given in this session. No benchmark is requested
+  by the bbport-only publishing task.
+- Use copied saves and a separate test folder for experiments. Check controls,
+  sound, game speed, visuals, save/load, stutter, and crashes as well as FPS.
+- Compare the same scene and warm-cache route. A cap, menu FPS, running process,
+  or draw-count filter does not prove real gameplay performance.
+- Heavy tracing and debugger attachment remain off during ordinary play tests.
+  Older private profiling state remains in ignored runtime/optimization-state.json;
+  do not restart those paused experiments without a new instruction.
 
-## Performance guardrails
+## Current handoff
 
-- Keep 1080p / 60 cap / perf 3 as the working baseline. The 900p boss trial
-  felt worse and was rolled back. Bigger FPS text was not a speedup.
-- profile_runtime.py measures CPU/GPU activity, not FPS or scene state.
-  Use light recordings during play; keep heavy Metal/Instruments tracing off.
-- Back up saves for experiments. Prefer separate emulator settings and copied
-  saves, and never test through my only copy of a save.
-- Measure the same scene and route. Check frame times, game speed, controls,
-  sound, visuals, and crashes. A higher cap or a dry run cannot prove 90+ FPS.
-- Work order: measured Mac performance, Windows/Linux, then browser research.
-  Browser-local execution versus streaming remains open.
+The private CSR copy and desktop shortcut use bbport and separate copied saves
+under `runtime/mods/csr/`. The text/archive and font-preview checks passed;
+in-game appearance and PS4 installation remain unverified. Do not include those
+edited game files in a release. The normal launcher does not apply the mod.
+
+The optional vertex-format stand-in and bigger FPS counter patches build, but
+long play with the stand-in is still unverified. See PERFORMANCE.md for measured
+bbport results and their limits; 90+ FPS gameplay is still a goal.
 
 ## Completion note
 
-2026-10-21: I added three weapon renames (198 English entries) and CSR loading labels; 23 tests and archive/font checks pass. The separate `runtime/mods/csr/` game, copied saves, launcher, and manifest stay private; in-game visuals and PS4 installation remain unverified.
-
-2026-10-13: I added `--engine bbport` to play.py. It installs the pinned bbport
-for Mac release under runtime/ (SHA-256 checked), merges the 1.09 update with
-APFS clones, copies the shadPS4 save once, and logs per-frame CSVs that
-`--stats` summarizes. Same spot: 56–59 FPS versus 43–48 on shadPS4. The local
-runtime now lives in the main checkout. The crowd fight is not measured yet.
-
-2026-10-13: I rewrote the README for people who don't code: a plain-words
-intro, a word list, and simpler setup steps, in the same voice. My goal is now
-60+ FPS in the Central Yharnam crowd, then 90+. I added docs/WINDOWS-LINUX.md
-with a paste-in prompt. bbport for Mac is my next lead; it is not tested here yet.
-
-2026-10-14: I stopped at a clean checkpoint after publishing the frame-clock
-fix, measuring buffer work, and rerunning GPU feedback with an explicit log.
-The retry produced 13,459 error-free GPU rows; its short automated route had
-0.31 ms mean and 1.63 ms maximum GPU command residence after load. That is a
-diagnostic lead, not a gameplay result or a 90+ FPS claim. All test apps are
-closed, all 16 original saves and current settings match, and 90+ FPS remains
-unverified. I also tried `Immediate` present mode on the same automated route:
-about 103 FPS versus about 101 FPS with the prior setting. I kept the public
-default unchanged because this route is not a busy gameplay scene.
-The CPU recorder still points at `GpuCommandProcessor` and `Game:Main`, not the
-present thread. A five-second macOS `sample` attempt on the Rosetta process
-exited without a stack file, so I made no function-level CPU change.
-
-2026-10-14: I rewrote the PS4-to-Mac walkthrough in clear first-person steps.
-It now asks about gear and firmware first, separates USB from Ethernet, and
-keeps the exact-firmware gate for 13.xx paths.
-
-## Resume from here
-
-- I asked to stop this session. Do not start another benchmark until I resume.
-- My best repeated lighter-effects runs remain 71.11/71.34 FPS at 1080p.
-  The new buffer diagnostics are separate from those runs.
-- Private source `92ce9d8` adds optional normal-thread buffer timing. The Release
-  build and Intel sanitizer checks pass. The same signed app completed both
-  buffer-range trials; PERFORMANCE.md records the results and limits.
-- Buffer fetch calls occupied 16–19% of the diagnostic windows. Nested times
-  overlap and include probe overhead; they are not CPU or GPU usage figures.
-- My next lead is existing Metal GPU start/end feedback in `kk_queue.c` and
-  `mtl_command_queue.m`. I inspected it but made no change or GPU capture.
-- The exact builds, private commits, trial paths, and preservation checks are
-  saved in ignored `runtime/optimization-state.json`. Keep all probes off for
-  normal FPS tests. The external SSD stays off-limits.
-
-## Tests still open
-
-- Private source `663fd82` counts memory faults and protection requests with
-  lock-free counters. The Release build and signal/concurrency checks pass.
-  Clock-aligned repeats counted about 122 versus 900 write faults per frame
-  at 64 KiB versus the original range. Counts do not measure handling time.
-  Normal-thread buffer work is now measured below; keep probes off for FPS tests.
-- The public frame-clock patch builds and passes checks on the actual recorder,
-  including stale-file refusal. Live clock gaps were under five microseconds.
-  Runtime metadata keeps the exact signed builds and separates the later
-  refusal guard from the clocked game runs. Fresh vblank tests show no gain.
-- Private source `25f90df` counts short SSE4a and patcher events.
-  The build, sanitizer, concurrent-counter, and live-signal checks pass.
-  All four counters stayed at zero across 59.09 seconds in the lamp scene.
-  It stays off by default. No signal handler logs or reads a clock.
-  The existing presentation probe remains a separate dirty edit.
-
-- Private Mesa `f99a9bd` reuses unchanged vertex binds. The build and 40,000
-  old-method checks pass, but the pair fell from 56.28 to 45.89 FPS with stalls.
-  Keep it private and off. Live counters avoided new dirty marks on 7.03% of calls;
-  they do not prove later GPU uploads were skipped.
-- Locked 1080p effects tests reached 56.28/56.38 FPS at perf 3 and 71.11/71.34
-  at perf 7. Shader reuse stayed on; vertex reuse and probes stayed off. The
-  lighter picture is a tradeoff. One 720p trial reached 73.75; 90+ is unverified.
-- Private Mesa `675da32` skips clean, unchanged shader binds. It builds and
-  passes 10,000 old-method comparisons. Keep it off by default pending more
-  scenes and combat, sound, controls, and game-speed checks.
-- Private source `9239edb` adds the one-way F9 benchmark input lock. Its 65
-  checks and live lock checks pass. Restart the test app to regain input.
-  An earlier unlocked diagnostic moved and is invalid for speed comparison.
-- Depth-state and descriptor caches have no repeatable FPS gain. Keep them
-  private and off. Depth-state creation measured only 1.45% of wall time in
-  one diagnostic. Optional probes and thread-priority changes stay off for
-  normal comparisons. PERFORMANCE.md carries the earlier results.
-- Keep the optional buffer patch off by default. GPU completion timing is the next
-  lead. Mesa already skips replay copies for one-time command buffers;
-  do not duplicate that work or skip barriers without proving correctness.
-- Raw captures, exact source patches, build hashes, and the next trial stay
-  in ignored runtime/optimization-state.json and nearby trial folders.
-  All 16 original saves match their backups. The original config differs
-  only in volume (100 to 0); leave it untouched. The external SSD remains
-  off-limits. Check preservation again after each experiment.
-- Preserve patch context spaces through .gitattributes and check patches
-  with git apply before sharing. Heavy tracing and debugger attachment
-  remain off-limits for these runs.
+2026-10-21: I made the launcher and public guides bbport-only, removed the old
+standalone tools, and kept the CSR sources. All 19 tests, the name self-check,
+installed-file check, and secret scans pass; no new gameplay benchmark was run.
 
 <!-- graft:start -->
 ## Graft — repo context graph
@@ -207,20 +120,3 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
-
-## Completion note
-
-2026-10-13: I stopped the private GPU timing trial cleanly and confirmed no emulator process remains. The public 1080p baseline is unchanged; 90+ FPS gameplay is still unverified. The next session can resume from the documented profiling boundary without touching the external SSD.
-
-2026-10-13: I checked the current shadPS4 upstream tip in an isolated checkout. It had no measured renderer speed change; the result is recorded in PERFORMANCE.md.
-
-2026-10-13: I made Vulkan core validation opt-in for play after a private title-route comparison. The measured gain is diagnostic only; real gameplay still needs a matching route.
-
-2026-10-13: I tried CUA keyboard, space, keypad, Return, and a private left-mouse Cross binding. The title menu still did not start offline play, so the faster captures remain menu-only. I stopped the trial and left the public profile unchanged.
-2026-10-13: I set the stopping point after pushing `46ae063` to `main`. The public docs and validation toggle are delivered; only repeated visible 90+ FPS gameplay remains open.
-2026-10-14: I resumed the private runtime from the isolated checkout, reached the title menu at a visible 60 FPS, and tested the configured `Down`, `Return`, `n`, and `KP_2` paths. The offline route still did not start; I stopped the emulator cleanly. 90+ FPS gameplay remains unverified.
-2026-10-13: I stopped the latest runtime after a visible 90 FPS title-menu overlay at 1080p with vblank 90. `Down` plus `KP_2` still did not start offline play, so 90+ FPS gameplay remains unverified.
-2026-10-14: I added the faster bbport engine to the PS4-to-Mac walkthrough and the setup and frame-hunting prompts. Docs only; the crowd fight on bbport is still unmeasured.
-2026-10-14: I fixed `--engine bbport --stats` crashing when quitting cut the last log row short. My first bbport crowd run felt smoother: median 60 FPS, 10% low 60, 9% of frames under 58, with a few long hitches.
-2026-10-14: I patched bbport so a half-written vertex format (the `data_format=15` crash) gets a stand-in instead of stopping the game, and added `--bbport-src` to run my own build. Built it; a long play test still has to prove it.
-2026-10-14: I added `--fps-size` and a bbport overlay patch that draws the FPS counter bigger on a darker panel, so viewers can read it.

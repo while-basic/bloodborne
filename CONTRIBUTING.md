@@ -1,71 +1,58 @@
 ```text
 Document:    Contributing to Bloodborne on Mac
-Version:     v1.4.0
+Version:     v2.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-13
-SHA256:      c705ec3274a3ec23da316c973ac7d63790bd6d82c5dabd0298f8807b3b25ec16
+Date:        2026-10-21
+SHA256:      e719b911000f28678ffc4e14ef0bcc92417ef429263dce8c4f38ed9c18e5b4aa
 Chain:       solana-mainnet
-Tx:          3m4j17Yzc8LYjqgbKH8efY5B8AjtJzQEYA7oBmLofaQeNJ1ZGHf6JYJcFnB92EmAnW7mjy3hHZMUbnLHcTtUmtib
+Tx:          Lu4WvNXiSNLgDoPzs4mWEaELzxENuvAhtcxJ4zXtWVAHyfb62r5pfMdooVnPd2ZWn9HxoncGcGPRQRHsaFiU7Bg
 License:     The Unlicense (public domain dedication)
 ```
 
 # Want to help?
 
 If you get this running, I'd like to know what you're using and how it performs.
-If you fix something, send a pull request.
+If you fix something, send a pull request. Keep it small enough to explain.
 
-My launcher code and docs are under [the Unlicense](LICENSE). Emulator patches
-keep shadPS4's GPL-2.0-or-later terms. Please contribute under the matching
-license and keep the upstream credits.
+My original code and docs use the Unlicense. The patches under `patches/bbport/`
+follow bbport's GPL-2.0-or-later terms. Keep the upstream credits.
 
 ## If something breaks
 
-Open an issue with:
+Tell me your Mac chip, memory, macOS and Python version, exact bbport build,
+game region/update, command, and what happened. For speed reports, include the
+scene, settings, test length, and whether you had already visited the area.
+Low frames and long pauses matter too.
 
-- Your computer, CPU/GPU, RAM, OS, and Python version.
-- The exact shadPS4 build, game region/update, and patch file source/hash.
-- The command you ran, what happened, and how to reproduce it.
-
-For FPS results, include the scene, resolution, settings, and how long you tested.
-Say whether you'd already visited the area and let its shaders compile.
-Average FPS and lows help more than a single peak.
-
-Keep passwords, tokens, personal details, game files, firmware, keys, and saves
-out of issues. Read through logs before attaching them.
+Keep game files, saves, firmware, keys, passwords, and raw private logs out of
+issues. Read what you're about to share before attaching it.
 
 ## Before sending a change
 
-Run these locally with Python 3.11 or newer:
+Use an isolated Git worktree. Run these checks locally with Python 3.11+:
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 -m py_compile play.py profile_runtime.py analyze_frames.py check_resource_pool.py check_buffer_faults.py
+python3 -m py_compile play.py mods/csr/brand_loading.py
 python3 play.py --help
-python3 analyze_frames.py --help
 git diff --check
 ```
 
-The tests don't need a game or emulator install. If your Mac is set up, also run
-`python3 play.py --check`. That checks local files and patches without changing
-settings. Say separately whether you actually launched and played the game.
+For changes to the weapon-name tool, also use .NET 8:
 
-I run checks locally. Please don't add GitHub Actions workflows.
+```sh
+dotnet run --project mods/csr/WeaponNames -- --self-test
+```
 
-For frame measurements, see [my capture guide](docs/FRAME-CAPTURE.md).
-Use an observed gameplay interval and keep raw captures private. The analyzer
-does not know whether a frame came from a menu or a fight.
+The tests use temporary fixtures. They do not need a game or launch bbport.
+On an installed Mac, also run `python3 play.py --check` and say separately
+whether you actually played. Changes to a bbport patch need a local build
+against its stated version and a check of the behavior it changes.
 
-For changes to the optional buffer-reuse patch, also run
-`python3 check_resource_pool.py /path/to/shadPS4` with the patch applied to
-the pinned source. That needs a C++20 compiler, but no game or GPU test.
+Use [the capture guide](docs/FRAME-CAPTURE.md) for frame reports. A CSV filter
+cannot prove which scene you were in. Keep the raw evidence private.
 
-For the optional buffer-write experiment, also run
-`python3 check_buffer_faults.py /path/to/shadPS4` with that patch applied and
-upstream submodules present. It checks memory boundaries and keeps texture
-checks at their original size. It does not test speed or thread safety.
-
-Before pushing, check the files you're committing and the Git history for game
-data, binaries, credentials, and private logs. Ignore rules won't remove
-something that's already committed. Keep credits and license notices for
-other people's work.
+I run checks locally. Do not create or run GitHub Actions workflows.
+Before pushing, review staged files and Git history for private data, game
+assets, and binaries. Ignore rules do not remove something already committed.

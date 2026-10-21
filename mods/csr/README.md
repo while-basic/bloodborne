@@ -1,12 +1,12 @@
 ```text
 Document:    My CSR Bloodborne Mod
-Version:     v1.0.0
+Version:     v1.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-21
-SHA256:      a0ac13a9658d4b697a26b96d9eaa131bfb51075edde771dd6c43f20242e118eb
+SHA256:      3895f434cd044671ad5677a7a1046946f263d3575e6fd5ca1a7fddfeedb6486d
 Chain:       solana-mainnet
-Tx:          qJSMHGpeUxjy7TkVvLC7ySovGzPJnaqVTf5PgDYNnXJwWTF1a11XHzB1x6XRYVDcKiqxECY1QvhQbsTmrK6gx2e
+Tx:          58sjH8D9nHu6ebDpiJ8zkVUzBuCknSTCVjqQKBvgNqGiaAFCv8PbgSXsqsetyi6RrJLnVyCJvtsD6J2HWQuKugeo
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -75,7 +75,7 @@ The CSR save is its own copy; later progress does not sync back automatically.
 
 ## What I checked
 
-- All 23 Python tests pass, including malformed GFX input checks.
+- The Python suite passes, including malformed GFX input checks.
 - The C# self-check covers all variants, Unicode, unchanged lore/null entries,
   and refusal when an expected weapon is missing.
 - Both real English archives reopen correctly. The other 17 files in each

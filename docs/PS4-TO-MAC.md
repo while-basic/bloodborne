@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne PS4 to Mac Walkthrough
-Version:     v2.1.0
+Version:     v3.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-14
-SHA256:      f06f1939548b861f40be1fd4784941a5521d094b12aa4cdfe51515dae2c86f4f
+Date:        2026-10-21
+SHA256:      b60bc1aab07056bfae6a80143c87dcf9545456422bb476f3a858a2b449c68839
 Chain:       solana-mainnet
-Tx:          4qp5ZLChS9v8yV1X2VZt5fjEo9dhnvmxPxSwMg6Ta91zZBQMnxowAwvL6MC6c1jVSxmWWuSRTAmUTi9w8QuFgE7X
+Tx:          SkhuYSq3dFc2wEG5LQFUcwVjctiAHazDHmGaZSjynJ8YA9gHpSpLZq5HcPwKYcPuNGBBQU8kPLojjiMW4FsmTsB
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -24,7 +24,7 @@ Before choosing a path, I have the agent ask:
 
 | Question | Why it matters |
 | --- | --- |
-| Which Mac, chip, RAM, and macOS version do you have? | I can compare it with current shadPS4 requirements. |
+| Which Mac, chip, RAM, and macOS version do you have? | I can compare it with current bbport for Mac requirements. |
 | How much free space is on the drive I may use? | The game, backup, update, and shader cache need room. |
 | What exact PS4 firmware number is on the console? | A path for 11.00 may not work on 11.02. |
 | Do you have the disc or a digital copy? What region and update? | My patches target CUSA00900 / 01.09. |
@@ -119,7 +119,7 @@ Copying a PKG and installing it are two different steps. Itemzflow may use the f
 2. Check the title ID and update. This launcher targets **CUSA00900 / 01.09**. I keep the base game and update records clear.
 3. Choose an approved USB or network destination and check free space first.
 4. Run the dumper's documented steps. Wait for its completion message and verify the copy with file sizes or hashes when possible.
-5. Follow the current [shadPS4 setup guide](https://shadps4.net/) for required modules and import rules. A plain FTP copy of encrypted installed files may not be an emulator-ready dump.
+5. Follow the current [bbport for Mac guide](https://github.com/bmy/bbport-mac/blob/0.4-v1/docs/USER_GUIDE.md) for the decrypted game layout and required files. A plain FTP copy of encrypted installed files may not be a usable dump.
 6. Keep saves in a separate backup. I never mix save restore into an FPS test.
 
 I do not share game files, updates, firmware, keys, or download links. A different region needs its own compatible setup; renaming a folder does not fix it.
@@ -128,15 +128,18 @@ I do not share game files, updates, firmware, keys, or download links. A differe
 
 Follow [the Mac setup in the README](../README.md#mac-setup). The short version is:
 
-1. Install Python 3.11 or newer and the shadPS4 Qt Launcher.
-2. Install the pre-release shadPS4 engine, open it once, then close it so the config exists.
-3. Put my complete extracted game under `runtime/games/CUSA00900/` and keep the original backup.
-4. Download the matching [Bloodborne patch file](https://raw.githubusercontent.com/shadps4-emu/ps4_cheats/main/PATCHES/Bloodborne.xml) into `runtime/downloads/Bloodborne.xml`.
-5. Close shadPS4, back up the config, saves, and any generated patch profile.
-6. Run `python3 play.py --check`. This checks local files. It does not launch the game or prove gameplay.
-7. Launch with `python3 play.py`, or use `Play Bloodborne.command`.
-8. Check the title screen, controls, sound, and a short walk. I report those checks separately from setup and FPS.
-9. Want more frames? Try the faster engine: `python3 play.py --engine bbport --install` once, then `python3 play.py --engine bbport`. It copies my shadPS4 save over once and leaves the original alone. At my first lamp it held 56–59 FPS where shadPS4 gave 43–48. The first launch can sit on a black screen for a few minutes while shaders build. See [the bbport section](../README.md#try-the-faster-engine-bbport).
+1. Install Python 3.11 or newer and follow bbport's Rosetta instructions.
+2. Run `python3 play.py --install` to download and verify the pinned bbport Mac release.
+3. Keep my original backup. Put the base game in `runtime/games/CUSA00900/` and update in `runtime/games/CUSA00900-patch/`, or put a complete merged 1.09 copy in `runtime/games/CUSA00900-109/`.
+4. Close bbport and back up its existing `runtime/bbport/` settings and saves.
+5. Run `python3 play.py --check`. This checks paths and shows settings; it does not launch or prove gameplay.
+6. Launch with `python3 play.py`, or use `Play Bloodborne.command`. The first launch merges separate game/update folders without changing them. Shader work can keep the screen black for a few minutes.
+7. Check the title screen, controls, sound, and a short walk. Keep those checks separate from setup and FPS.
+8. After quitting normally, `python3 play.py --stats` summarizes the latest frame CSV. It is a rough scene filter, not proof of a benchmark.
+
+This launcher uses only bbport. It does not install a second engine, change
+another app's settings, or import saves automatically. Existing bbport saves
+stay under `runtime/bbport/user/savedata/1/CUSA00900/`.
 
 Once that works, I agree on one scene, picture quality, and test length before measuring FPS. I keep the 1080p / 60 cap / perf 3 profile as my way home.
 

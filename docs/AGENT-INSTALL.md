@@ -1,12 +1,12 @@
 ```text
 Document:    My Codex and Claude Setup Prompts
-Version:     v2.1.0
+Version:     v3.0.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-14
-SHA256:      252a08fe7812c4c3e5a160873714c39aa2be6f17318d4ca2a4bc9200edcd1437
+Date:        2026-10-21
+SHA256:      a74bbe8426dd802a626bf5ee07a528905c5337a0ea63dbbb3d3cb8dd30f0cd6d
 Chain:       solana-mainnet
-Tx:          4LafLqwzmpsNWCD5VpNfAAXcf9djXf1jncY74X1JNegwFDGd8hyXfRVAdXWyH7rs7QYfkE4D3EtSfaTnCjGePmfX
+Tx:          4otYovXo29X1mqw3pgMsYqbFLq58EPXYPbHyqQFyLy5VX5EnTAJmHvCoeTnDLmzWQuvvR2rJubw7HzMC2CbCSUAT
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -31,7 +31,7 @@ USB drive, Ethernet cable, USB-C Ethernet adapter, and any existing homebrew.
 Ask which drives must stay untouched. Never assume a USB drive is empty.
 
 Ask permission before a Mac performance test. Explain the duration and load.
-Check specs and current shadPS4 requirements first; if I approve a load test,
+Check specs and current bbport for Mac requirements first; if I approve a load test,
 use a short local test. A synthetic result cannot guarantee game performance.
 Do not upload hardware reports. Let me skip testing and continue the guide.
 
@@ -70,31 +70,28 @@ AGENTS.md, and CLAUDE.md first. Check what is installed and preserve my work.
 
 Ask for my Mac specs, game folder, game region/update, available space, and
 drives to avoid. Ask permission before running a performance/load test and
-explain what it can and cannot tell me. Use official shadPS4 requirements.
+explain what it can and cannot tell me. Use the pinned bbport for Mac guide.
 
-Use Python 3.11+, shadPS4 Qt Launcher, and the upstream Rosetta setup. Install
-the pre-release engine, then open and close it to create its config. Check
-paths and config format against play.py. Don't bypass macOS security prompts.
+Use Python 3.11+ and bbport for Mac only. Run python3 play.py --install to
+fetch the pinned official release and check its SHA-256. Follow the upstream
+Rosetta instructions. Do not bypass macOS security prompts or substitute
+another engine.
 
 Verify CUSA00900 / 01.09 from game metadata. A renamed folder is not proof.
-If I have a disc, PKG, or archive, walk me through the upstream dump/import
-step first. Reuse a matching complete install; keep the original backup.
-Get Bloodborne.xml from the exact upstream URL in the README. Record the
-emulator build and patch hash. Do not fetch game data, keys, or firmware.
+Keep the original backup. Put a full merged game in runtime/games/CUSA00900-109,
+or use the separate base/update layout in the README. Do not fetch game data,
+keys, or firmware. No separate community patch download is needed.
 
 Run the local checks in CONTRIBUTING.md and python3 play.py --check.
-Back up config, the existing generated patch profile, and saves before launch.
-Tell me where each backup is. The launcher's backup covers config only.
+Back up runtime/bbport before launch if it exists. That folder holds this
+launcher's settings and saves. Do not overwrite an existing save or import
+one without my instruction. The launcher does not import saves automatically.
 
-After any running emulator closes normally, launch at 1080p / 60 cap / perf 3.
-Verify the game window, then controls, sound, and actual gameplay. Ask me to
-confirm what you cannot observe. Report setup checks and gameplay separately.
-
-Once shadPS4 works, offer the faster bbport engine from the README. Run
-python3 play.py --engine bbport --install (it checks the download's SHA-256),
-then launch with --engine bbport. It copies my shadPS4 save once; keep the
-shadPS4 setup as a backup. A black screen during the first shader build is
-normal. Afterward, python3 play.py --engine bbport --stats sums up FPS.
+After any running game closes normally, launch at 1080p / 60 cap / perf 3.
+The first launch can sit on a black screen while shaders build. Verify the
+game window, controls, sound, and actual play. Ask me to confirm what you
+cannot observe. Keep file checks and gameplay separate. After quitting,
+python3 play.py --stats summarizes the latest frame CSV.
 Keep private files local. Do not push, upload, or use GitHub Actions.
 ```
 
@@ -103,10 +100,10 @@ Keep private files local. Do not push, upload, or use GitHub Actions.
 ```text
 Help repair my existing Bloodborne launcher setup. Read the repo instructions.
 Inspect my current install, local changes, and logs before changing anything.
-Check the emulator, game version, config format, patch file, and --check output.
+Check the bbport build, game version, runtime/bbport settings, and --check output.
 
-Back up settings, the generated patch profile, and saves. Keep the original
-game and working emulator. Do not start by deleting caches or reinstalling
+Back up runtime/bbport settings and saves. Keep the original
+game and working bbport build. Do not start by deleting caches or reinstalling
 everything. Use a separate worktree if code changes are needed.
 
 Fix the cause, run the local checks, and verify a real launch. Ask me what I
@@ -121,20 +118,20 @@ Help measure and improve my Bloodborne setup. Read PERFORMANCE.md and the
 roadmap. Ask permission for performance tests and agree on the resolution,
 picture quality, test length, and scene before changing settings.
 
-Keep a working emulator and backups of config, patches, and saves. Record
-hardware, OS, display refresh, power mode, game version, engine (shadPS4 or
-bbport), repo and engine commits, engine/patch hashes, resolution, FPS cap, vblank, and enabled patches.
+Keep a working bbport build and backups of settings and saves. Record
+hardware, OS, display refresh, power mode, game version, repo and bbport
+commits, engine/patch hashes, resolution, FPS cap, and enabled patches.
 
 Use the same scene, camera, route, and warm shader cache. Change one thing
 at a time. Repeat runs and record FPS/frame times, stutter, crashes, and visual
 changes. Check game speed, controls, sound, and save/load. Separate menus,
 loading, deaths, and first-visit shader work from the gameplay comparison.
 
-profile_runtime.py reads CPU/GPU activity; it does not measure FPS or see the
-scene. Do not run heavy Metal/Instruments tracing during combat. Don't infer
+Do not run heavy Metal/Instruments tracing during combat. Do not infer
 FPS from CPU use. A higher cap, static scene, or short peak cannot prove steady
 90+ FPS. Keep unmeasured results blank and roll back failed experiments.
 
-For bbport, run python3 play.py --engine bbport --stats after each session.
+Run python3 play.py --stats after each session. The draw-count filter does
+not recognize a scene; use the route you actually observed.
 Keep raw evidence local. Do not upload, push, or use GitHub Actions.
 ```

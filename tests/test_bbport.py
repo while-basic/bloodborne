@@ -24,7 +24,6 @@ class BbportTests(unittest.TestCase):
             "BBPORT_DIR": self.runtime / "engines/bbport",
             "BBPORT_RUN": self.runtime / "engines/bbport/run.sh",
             "BBPORT_DATA": self.runtime / "bbport",
-            "SHADPS4_SAVE": self.root / "shadPS4/savedata/CUSA00900/SPRJ0005",
         }
         for name, value in names.items():
             patcher = patch.object(play, name, value)
@@ -62,17 +61,6 @@ class BbportTests(unittest.TestCase):
         self.assertEqual((play.GAME_MERGED / "base-only").read_text(), "kept")
         self.assertEqual(play.GAME.read_text(), "base")
 
-    def test_import_save_copies_once_without_shadps4_metadata(self):
-        (play.SHADPS4_SAVE / "sce_sys").mkdir(parents=True)
-        (play.SHADPS4_SAVE / "userdata0000").write_text("save")
-        target = play.import_save()
-        self.assertEqual((target / "userdata0000").read_text(), "save")
-        self.assertFalse((target / "sce_sys").exists())
-        self.assertTrue((play.SHADPS4_SAVE / "userdata0000").exists())
-        (target / "userdata0000").write_text("newer")
-        self.assertIsNone(play.import_save())
-        self.assertEqual((target / "userdata0000").read_text(), "newer")
-
     def test_install_refuses_a_download_with_the_wrong_hash(self):
         archive = self.runtime / f"downloads/bbport-mac-{play.BBPORT_VERSION}.zip"
         archive.parent.mkdir(parents=True)
@@ -84,10 +72,10 @@ class BbportTests(unittest.TestCase):
 
     def test_check_without_install_explains_the_next_step(self):
         stderr = io.StringIO()
-        with patch("sys.argv", ["play.py", "--engine", "bbport", "--check"]), \
+        with patch("sys.argv", ["play.py", "--check"]), \
                 contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             play.main()
-        self.assertIn("--engine bbport --install", stderr.getvalue())
+        self.assertIn("--install", stderr.getvalue())
 
 
     def test_own_build_needs_a_built_checkout(self):
@@ -95,14 +83,16 @@ class BbportTests(unittest.TestCase):
         (checkout / "tools/macos").mkdir(parents=True)
         (checkout / "tools/macos/run.sh").write_text("")
         stderr = io.StringIO()
-        with patch("sys.argv", ["play.py", "--engine", "bbport", "--bbport-src", str(checkout), "--check"]), \
+        with patch("sys.argv", ["play.py", "--bbport-src", str(checkout), "--check"]), \
                 contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             play.main()
         self.assertIn("tools/macos/build.sh", stderr.getvalue())
         (checkout / "out").mkdir()
         (checkout / "out/bb-probe").write_text("")
+        play.GAME_MERGED.mkdir(parents=True)
+        (play.GAME_MERGED / "eboot.bin").write_text("game")
         stdout = io.StringIO()
-        with patch("sys.argv", ["play.py", "--engine", "bbport", "--bbport-src", str(checkout), "--check"]), \
+        with patch("sys.argv", ["play.py", "--bbport-src", str(checkout), "--check"]), \
                 contextlib.redirect_stdout(stdout):
             self.assertEqual(play.main(), 0)
         self.assertEqual(json.loads(stdout.getvalue())["engine"], str(checkout / "tools/macos/run.sh"))
@@ -110,7 +100,7 @@ class BbportTests(unittest.TestCase):
 
     def test_fps_size_needs_own_build(self):
         stderr = io.StringIO()
-        with patch("sys.argv", ["play.py", "--engine", "bbport", "--fps-size", "3", "--check"]), \
+        with patch("sys.argv", ["play.py", "--fps-size", "3", "--check"]), \
                 contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             play.main()
         self.assertIn("--bbport-src", stderr.getvalue())

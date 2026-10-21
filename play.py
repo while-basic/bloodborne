@@ -1,53 +1,34 @@
 #!/usr/bin/env python3
-# Document:    Bloodborne launcher for shadPS4 on the M5 Max
-# Version:     v1.7.0
+# Document:    Bloodborne launcher for bbport on Mac
+# Version:     v2.0.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
-# Date:        2026-10-14
-# SHA256:      399b7791561b77eea2fbe5d7ca39a0abc2d99c156a26861ede697d152c3cd61c
+# Date:        2026-10-21
+# SHA256:      92a866eeb422e51930bec867677994961a9ab0f74db8488a7e5ddabc410fd16b
 # Chain:       solana-mainnet
-# Tx:          3bd8kbe1jthHxRJGFMUgE7iZH7umU8GVDkqMfhBSGZhUVYXZ63GWVxbwjHpaUt6XA9m1ANZKnhZRcmWGdsHthaeH
+# Tx:          66A3bqc9cnBKa3A24GVKKo1LMiWNzKv2mvYCidJ6rAtx4hu6z2XiyG8uamUCQ6M8R4RRMzXC5wSaVNpfeSH6i4d2
 # License:     The Unlicense (public domain dedication)
-"""Launch the local Bloodborne copy with one explicit display profile.
+"""Play my own Bloodborne copy with bbport for Mac.
 
-The profile (resolution patch, FPS++ patch, performance patches) is installed into the
-shadPS4 patches folder, so the Qt launcher applies the same profile as this script.
-
-Defaults are 1080p / 60 FPS cap / perf 3 / borderless fullscreen with Facegen disabled.
-Earlier M5 Max runs reached 57-60 FPS in quiet spots and about 41-48 in crowded
-fights. The FPS option sets a target, not a measured result or a guaranteed floor.
-See README.md and PERFORMANCE.md for the test context and current working profile.
-
---engine bbport runs bbport for Mac instead (install it once with --install). It held 56-59 FPS
-where shadPS4 gave 43-48; --stats summarizes the last bbport session's frame log.
+The default is 1080p, a 60 FPS cap, perf 3, and fullscreen.
+Install the pinned engine once with --install. Use --check to inspect the
+local files without launching, and --stats for the last session's frame log.
+A cap is a target, not a measured result.
 """
 import argparse
-import copy
 import csv
-from datetime import datetime
 import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
 import urllib.request
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ROOT / "runtime"
-SHADPS4_HOME = Path.home() / "Library/Application Support/shadPS4"
-ENGINES = {
-    "nightly": Path.home() / "Library/Application Support/shadPS4QtLauncher/versions/Pre-release/shadps4",
-    "release": RUNTIME / "Bloodborne Emulator.app/Contents/MacOS/shadps4",
-    # Same nightly binary inside a bundle whose Info.plist declares a game category, so macOS Game Mode can engage.
-    "nightly-app": RUNTIME / "Bloodborne Nightly.app/Contents/MacOS/shadps4",
-}
 GAME = RUNTIME / "games/CUSA00900/eboot.bin"
-CONFIG = SHADPS4_HOME / "config.json"
-PATCH_DIR = SHADPS4_HOME / "patches/bloodborne-profile"
 # bbport for Mac (https://github.com/bmy/bbport-mac, GPL-2.0-or-later): a Bloodborne-only engine built
 # on shadPS4's renderer. It loads the game without a full PS4 emulator, so less work sits between the
 # game and the Mac. Everything it needs or writes stays under runtime/.
@@ -60,8 +41,7 @@ BBPORT_DATA = RUNTIME / "bbport"
 # bbport wants the base game and the 1.09 update merged into one folder.
 GAME_PATCH = RUNTIME / "games/CUSA00900-patch"
 GAME_MERGED = RUNTIME / "games/CUSA00900-109"
-SHADPS4_SAVE = SHADPS4_HOME / "home/1000/savedata/CUSA00900/SPRJ0005"
-# bbport's own copy of the community patch file uses these names; it has no Bloom or "lower renders" patch.
+# Keep preset numbers stable: levels 3 and 7 add no extra effect in bbport.
 BBPORT_LADDER = [
     "Disable Motion Blur (perf increase)",
     "Disable Chromatic Aberration",
@@ -71,86 +51,8 @@ BBPORT_LADDER = [
     "Disable DoF",
     None,
 ]
-TITLE_ID = "CUSA00900"
-APP_VER = "01.09"
 SIZES = {"720p": (1280, 720), "900p": (1600, 900), "1080p": (1920, 1080), "1440p": (2560, 1440),
          "4k": (3840, 2160)}
-# Cumulative ladder: --perf N adds every entry up to N. Visual cost grows down the list.
-PERF_LADDER = [
-    "Disable Motion Blur (Perf Increase)",
-    "Disable Chromatic Aberration",
-    "lower specific renders (Perf Increase)",
-    "Disable Dynamic Light Shadows (Perf Increase)",
-    "Disable SSAO",
-    "Disable DoF",
-    "Disable Bloom",
-]
-
-
-def selected_patches(resolution, fps, perf, extra=(), keep_facegen=False):
-    selected = {"Skip Intro + warning message", "Performance Patch (Perf Increase)", f"{fps} FPS++"}
-    if not keep_facegen:
-        # Facegen "vertex explosions" (random spiky geometry on characters) hit twice on 2026-10-12.
-        selected.add("Disable Facegen")
-    if resolution != "1080p":
-        width, height = SIZES[resolution]
-        selected.add(f"Resolution Patch {width}x{height} (16:9)")
-    selected.update(PERF_LADDER[:perf])
-    selected.update(extra)
-    return selected
-
-
-def make_profile(selected):
-    source = ET.parse(RUNTIME / "downloads/Bloodborne.xml").getroot()
-    profile = ET.Element("Patch")
-    profile.append(copy.deepcopy(source.find("TitleID")))
-    found = set()
-    for metadata in source.findall("Metadata"):
-        if metadata.get("Name") in selected:
-            if metadata.get("AppVer") != APP_VER:
-                raise RuntimeError(f"Patch {metadata.get('Name')} is for game version {metadata.get('AppVer')}")
-            element = copy.deepcopy(metadata)
-            element.set("isEnabled", "true")
-            profile.append(element)
-            found.add(metadata.get("Name"))
-    if found != selected:
-        raise RuntimeError(f"Missing patches: {sorted(selected - found)}")
-    return profile, sorted(found)
-
-
-def install_profile(profile):
-    """Write the profile where every shadPS4 engine auto-loads it (needs files.json)."""
-    PATCH_DIR.mkdir(parents=True, exist_ok=True)
-    ET.ElementTree(profile).write(PATCH_DIR / f"{TITLE_ID}.xml", encoding="utf-8", xml_declaration=True)
-    (PATCH_DIR / "files.json").write_text(json.dumps({f"{TITLE_ID}.xml": [TITLE_ID]}, indent=2) + "\n")
-
-
-def write_config(args):
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    backups = RUNTIME / "config-backups"
-    backups.mkdir(exist_ok=True)
-    original = CONFIG.read_bytes()
-    (backups / f"{stamp}.json").write_bytes(original)
-    config = json.loads(original)
-    width, height = SIZES[args.resolution]
-    config["GPU"].update(internal_screen_width=width, internal_screen_height=height,
-                         vblank_frequency=args.vblank, full_screen=args.fullscreen,
-                         full_screen_mode=("Fullscreen" if args.fullscreen_mode == "exclusive"
-                                           else "Fullscreen (Borderless)") if args.fullscreen else "Windowed")
-    if args.present_mode:
-        config["GPU"]["present_mode"] = args.present_mode
-    # The resolution patches allocate bigger frame buffers; they need extra direct memory.
-    config["General"].update(extra_dmem_in_mbytes=8192 if args.resolution == "4k" else 4096,
-                             show_fps_counter=True)
-    config["Vulkan"].update(pipeline_cache_enabled=True,
-                             vkvalidation_core_enabled=bool(args.keep_vulkan_validation))
-    config["Log"]["enable"] = not args.no_log
-    config["Log"]["sync"] = False  # never block game threads on log writes
-    temporary = CONFIG.with_suffix(".tmp")
-    temporary.write_text(json.dumps(config, indent=2) + "\n")
-    temporary.replace(CONFIG)
-    return stamp
-
 
 def bbport_patches(perf, extra=()):
     return [name for name in BBPORT_LADDER[:perf] if name] + list(extra)
@@ -194,15 +96,6 @@ def merge_game():
     scratch.rename(GAME_MERGED)
 
 
-def import_save():
-    """Copy (never move) the shadPS4 save into bbport's layout the first time."""
-    target = BBPORT_DATA / "user/savedata/1" / TITLE_ID / SHADPS4_SAVE.name
-    if target.exists() or not SHADPS4_SAVE.is_dir():
-        return None
-    shutil.copytree(SHADPS4_SAVE, target, ignore=shutil.ignore_patterns("sce_sys"))
-    return target
-
-
 def frame_summary(rows, min_draws=500):
     """FPS summary of gameplay frames from a bbport frames CSV; menus and loading screens draw far less.
     Quitting can cut the last row short, so rows with missing fields are skipped."""
@@ -229,37 +122,35 @@ def bbport_stats(parser):
 
 
 def launch_bbport(args, parser):
-    if args.fps == 120:
-        parser.error("bbport takes --fps 60 or 90.")
     run = Path(args.bbport_src).expanduser() / "tools/macos/run.sh" if args.bbport_src else BBPORT_RUN
     if args.fps_size > 1 and not args.bbport_src:
         parser.error("--fps-size needs --bbport-src (the release bbport has no counter size setting).")
     if args.bbport_src and not (run.is_file() and (run.parents[2] / "out/bb-probe").is_file()):
         parser.error(f"No built bbport checkout at {args.bbport_src} (needs tools/macos/build.sh first).")
     if not run.is_file():
-        parser.error("bbport is not installed yet. Run: python3 play.py --engine bbport --install")
+        parser.error("bbport is not installed yet. Run: python3 play.py --install")
+    game_ready = (GAME_MERGED / "eboot.bin").is_file()
+    sources_ready = GAME.is_file() and (GAME_PATCH / "eboot.bin").is_file()
+    if not game_ready and not sources_ready:
+        parser.error("Game files missing: supply the merged CUSA00900-109 folder, or both "
+                     "CUSA00900 and CUSA00900-patch under runtime/games/. See README.md.")
     width, height = SIZES[args.resolution]
     patches = bbport_patches(args.perf, args.extra)
     if args.check:
         print(json.dumps({"engine": str(run), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "patches": patches, "game": str(GAME_MERGED),
-                          "game_ready": (GAME_MERGED / "eboot.bin").is_file(), "data": str(BBPORT_DATA),
+                          "game_ready": game_ready, "merge_needed": not game_ready, "data": str(BBPORT_DATA),
                           "fullscreen": args.fullscreen, "gameplay_verified": False}, indent=2))
         return 0
     if subprocess.run(["pgrep", "-x", "bb-probe"], stdout=subprocess.DEVNULL).returncode == 0:
         parser.error("Close the running game first.")
     merge_game()
-    imported = import_save()
-    if imported:
-        print(f"Copied your shadPS4 save to {imported}", flush=True)
     BBPORT_DATA.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, BB_DATA_DIR=str(BBPORT_DATA), BB_GAME_DIR=str(GAME_MERGED), BB_FPS=str(args.fps),
                BB_OUTPUT_RES=f"{width}x{height}", BB_RENDER_RES=f"{width}x{height}",
                BB_PATCHES=";".join(patches), BB_FULLSCREEN="1" if args.fullscreen else "0")
-    if args.fps_size > 1:
-        env["BB_FPS_SCALE"] = str(args.fps_size)  # needs a --bbport-src build with my overlay patch
-    if not args.no_log:
-        env["BB_SAVE_LOG"] = "1"  # per-frame CSV in runtime/bbport/logs/
+    env["BB_FPS_SCALE"] = str(args.fps_size)  # larger sizes need my optional overlay patch
+    env["BB_SAVE_LOG"] = "0" if args.no_log else "1"
     build = f"own build {args.bbport_src}" if args.bbport_src else BBPORT_VERSION
     print(f"Launching bbport {build}: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
           f"patches: {', '.join(patches) or 'none'}", flush=True)
@@ -269,80 +160,31 @@ def launch_bbport(args, parser):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--resolution", choices=SIZES, default="1080p")
-    parser.add_argument("--fps", type=int, choices=(60, 90, 120), default=60)
-    parser.add_argument("--perf", type=int, choices=range(len(PERF_LADDER) + 1), default=3,
-                        help="performance patch ladder level (0 = base patches only; 3 = first three optional effects patches)")
-    parser.add_argument("--engine", choices=[*ENGINES, "bbport"], default="nightly",
-                        help="bbport = the Bloodborne-only engine from bbport-mac (install it with --install)")
-    parser.add_argument("--install", action="store_true", help="with --engine bbport: download and check it")
-    parser.add_argument("--bbport-src", metavar="DIR",
-                        help="with --engine bbport: run your own built bbport-mac checkout instead of the release")
+    parser.add_argument("--fps", type=int, choices=(60, 90), default=60)
+    parser.add_argument("--perf", type=int, choices=range(len(BBPORT_LADDER) + 1), default=3,
+                        help="effects preset (0 = none; 3 = motion blur and color fringing off)")
+    # Keep old bbport commands working; no other engine can be selected.
+    parser.add_argument("--engine", choices=("bbport",), default="bbport", help=argparse.SUPPRESS)
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--install", action="store_true", help="download and verify the pinned bbport release")
+    action.add_argument("--stats", action="store_true", help="summarize the latest bbport frame CSV")
+    action.add_argument("--check", action="store_true", help="check local files without changing or launching anything")
+    parser.add_argument("--bbport-src", metavar="DIR", help="use your own built bbport-mac checkout")
     parser.add_argument("--fps-size", type=int, choices=range(1, 7), default=1, metavar="1-6",
-                        help="with --bbport-src: draw the FPS counter this many times larger (3 suits a recording)")
-    parser.add_argument("--stats", action="store_true", help="with --engine bbport: FPS summary of the last session")
-    parser.add_argument("--windowed", action="store_true", help="run in a window instead of borderless fullscreen")
-    parser.add_argument("--fullscreen-mode", choices=("borderless", "exclusive"), default="borderless",
-                        help="borderless = SDL window over the desktop; exclusive = native macOS fullscreen space")
-    parser.add_argument("--keep-facegen", action="store_true",
-                        help="leave Facegen enabled (default disables it to stop the spiky-geometry glitch)")
-    parser.add_argument("--vblank", type=int, default=None, metavar="HZ",
-                        help="experimental emulated vblank rate, 30–1000 Hz; default = --fps. Measure changes before keeping them")
-    parser.add_argument("--present-mode", choices=("Fifo", "Immediate", "Mailbox"), default=None,
-                        help="swapchain present mode to request; support depends on the Vulkan driver")
-    parser.add_argument("--no-log", action="store_true", help="disable the emulator log for a play session")
-    parser.add_argument("--keep-vulkan-validation", action="store_true",
-                        help="keep Vulkan core validation on for debugging; slower for play")
-    parser.add_argument("--check", action="store_true", help="validate without changing settings or launching")
+                        help="with a patched --bbport-src build: make the FPS counter larger")
+    parser.add_argument("--windowed", action="store_true", help="play in a window instead of fullscreen")
+    parser.add_argument("--no-log", action="store_true", help="skip per-frame CSV recording (diagnostic logs remain)")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
-                        help="also enable this patch by its exact XML name (repeatable)")
+                        help="enable an extra patch by its exact name in bbport's patch file (repeatable)")
     args = parser.parse_args()
-    args.vblank = args.fps if args.vblank is None else args.vblank
-    if not 30 <= args.vblank <= 1000:
-        parser.error("--vblank must be between 30 and 1000 Hz.")
     args.fullscreen = not args.windowed
-    if args.engine == "bbport":
-        if args.install:
-            install_bbport()
-            return 0
-        if args.stats:
-            return bbport_stats(parser)
-        return launch_bbport(args, parser)
-    emulator = ENGINES[args.engine]
-    if args.engine == "nightly" and not emulator.is_file():
-        emulator = ENGINES["release"]
-    for path in (emulator, GAME, CONFIG, RUNTIME / "downloads/Bloodborne.xml"):
-        if not path.is_file():
-            parser.error(f"Required local file missing: {path}")
-    profile, patches = make_profile(selected_patches(args.resolution, args.fps, args.perf, args.extra,
-                                                     args.keep_facegen))
-    if args.check:
-        print(json.dumps({"engine": str(emulator), "resolution": args.resolution, "fps_target": args.fps,
-                          "vblank_hz": args.vblank, "present_mode_requested": args.present_mode,
-                          "vulkan_validation_core": args.keep_vulkan_validation,
-                          "fullscreen_mode": args.fullscreen_mode if args.fullscreen else "windowed",
-                          "perf_level": args.perf, "fullscreen": args.fullscreen, "patches": patches,
-                          "profile_dir": str(PATCH_DIR), "local_files_present": True,
-                          "gameplay_verified": False}, indent=2))
+    if args.install:
+        install_bbport()
         return 0
-    if subprocess.run(["pgrep", "-x", "shadps4"], stdout=subprocess.DEVNULL).returncode == 0:
-        parser.error("Close the running emulator before changing profiles.")
-    stamp = write_config(args)
-    install_profile(profile)
-    logs = RUNTIME / "sessions"
-    logs.mkdir(exist_ok=True)
-    log = logs / f"{stamp}-{args.resolution}-{args.fps}-perf{args.perf}-{args.engine}.log"
-    print(f"Launching {args.engine} engine: {args.resolution}, target {args.fps} FPS, "
-          f"vblank {args.vblank} Hz, perf level {args.perf}, "
-          f"patches: {', '.join(patches)}", flush=True)
-    print(f"Log: {log}", flush=True)
-    env = dict(os.environ)
-    # Exclusive fullscreen is a separate macOS Space; without this SDL hint the game minimizes whenever
-    # another window takes focus, which also drops macOS Game Mode.
-    env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
-    with log.open("w") as output:
-        return subprocess.call([str(emulator), "--show-fps", "--game", str(GAME)], cwd=ROOT, env=env,
-                               stdout=output, stderr=subprocess.STDOUT)
+    if args.stats:
+        return bbport_stats(parser)
+    return launch_bbport(args, parser)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

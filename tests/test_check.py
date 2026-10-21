@@ -1,147 +1,130 @@
-"""Exercise the public dry run without game files or an emulator."""
+"""Check the bbport-only launch boundary without starting a game."""
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
-import xml.etree.ElementTree as ET
 
 import play
 
 
-class DryRunTests(unittest.TestCase):
+class LauncherTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.runtime = self.root / "runtime"
-        self.xml = self.runtime / "downloads/Bloodborne.xml"
-        self.xml.parent.mkdir(parents=True)
-        self.game = self.runtime / "games/CUSA00900/eboot.bin"
-        self.game.parent.mkdir(parents=True)
-        self.game.touch()
-        self.engine = self.root / "shadps4"
-        self.engine.touch()
-        self.config = self.root / "config.json"
-        self.config.write_text("{}\n")
-        self.profile = self.root / "patches/bloodborne-profile"
-        root = ET.Element("Patch")
-        ET.SubElement(ET.SubElement(root, "TitleID"), "ID").text = "CUSA00900"
-        for name in sorted(play.selected_patches("1080p", 60, 3)):
-            ET.SubElement(root, "Metadata", Name=name, AppVer="01.09")
-        ET.ElementTree(root).write(self.xml)
-        for name, value in {
-            "RUNTIME": self.runtime,
-            "GAME": self.game,
-            "CONFIG": self.config,
-            "PATCH_DIR": self.profile,
-            "ENGINES": {"nightly": self.engine, "release": self.engine},
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        for name, path in {
+            "ROOT": self.root, "RUNTIME": self.root / "runtime",
+            "GAME": self.root / "base/eboot.bin", "GAME_PATCH": self.root / "update",
+            "GAME_MERGED": self.root / "game", "BBPORT_RUN": self.root / "engine/run.sh",
+            "BBPORT_DATA": self.root / "data",
         }.items():
-            replacement = patch.object(play, name, value)
+            replacement = patch.object(play, name, path)
             replacement.start()
             self.addCleanup(replacement.stop)
+        play.BBPORT_RUN.parent.mkdir()
+        play.BBPORT_RUN.write_text("engine")
+        play.GAME_MERGED.mkdir()
+        (play.GAME_MERGED / "eboot.bin").write_text("game")
+        (self.root / "original-save").write_bytes(b"keep me")
 
     def snapshot(self):
         return {str(p.relative_to(self.root)): p.read_bytes()
                 for p in self.root.rglob("*") if p.is_file()}
 
-    def test_check_is_read_only_and_does_not_claim_gameplay(self):
+    def test_default_check_is_bbport_and_read_only(self):
         before = self.snapshot()
         output = io.StringIO()
         with patch("sys.argv", ["play.py", "--check"]), \
                 patch.object(play.subprocess, "run") as run, \
-                patch.object(play.subprocess, "call") as launch, \
-                contextlib.redirect_stdout(output):
+                patch.object(play.subprocess, "call") as launch, contextlib.redirect_stdout(output):
             self.assertEqual(play.main(), 0)
         result = json.loads(output.getvalue())
-        self.assertTrue(result["local_files_present"])
+        self.assertEqual(result["engine"], str(play.BBPORT_RUN))
+        self.assertTrue(result["game_ready"])
+        self.assertFalse(result["merge_needed"])
         self.assertFalse(result["gameplay_verified"])
         self.assertEqual(result["fps_target"], 60)
-        self.assertEqual(result["vblank_hz"], 60)
-        self.assertFalse(result["vulkan_validation_core"])
+        self.assertEqual(result["resolution"], "1080p")
+        self.assertEqual(result["perf_level"], 3)
         self.assertEqual(before, self.snapshot())
-        self.assertFalse(self.profile.exists())
         run.assert_not_called()
         launch.assert_not_called()
 
-    def test_check_reports_timing_request_without_applying_it(self):
+    def test_check_accepts_base_and_update_without_merging(self):
+        (play.GAME_MERGED / "eboot.bin").unlink()
+        play.GAME.parent.mkdir()
+        play.GAME.write_text("base")
+        play.GAME_PATCH.mkdir()
+        (play.GAME_PATCH / "eboot.bin").write_text("update")
+        before, output = self.snapshot(), io.StringIO()
+        with patch("sys.argv", ["play.py", "--check"]), contextlib.redirect_stdout(output):
+            self.assertEqual(play.main(), 0)
+        self.assertTrue(json.loads(output.getvalue())["merge_needed"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_missing_game_fails_without_launch_or_file_changes(self):
+        (play.GAME_MERGED / "eboot.bin").unlink()
         before = self.snapshot()
-        output = io.StringIO()
-        with patch("sys.argv", ["play.py", "--check", "--vblank", "120",
-                                "--present-mode", "Fifo", "--windowed"]), \
-                patch.object(play.subprocess, "run") as run, \
-                patch.object(play.subprocess, "call") as launch, \
-                contextlib.redirect_stdout(output):
-            self.assertEqual(play.main(), 0)
-        result = json.loads(output.getvalue())
-        self.assertEqual(result["fps_target"], 60)
-        self.assertEqual(result["vblank_hz"], 120)
-        self.assertEqual(result["present_mode_requested"], "Fifo")
-        self.assertEqual(result["fullscreen_mode"], "windowed")
-        self.assertFalse(result["vulkan_validation_core"])
-        self.assertFalse(result["gameplay_verified"])
-        self.assertEqual(before, self.snapshot())
-        run.assert_not_called()
-        launch.assert_not_called()
-
-    def test_check_can_keep_vulkan_validation_for_debugging(self):
-        output = io.StringIO()
-        with patch("sys.argv", ["play.py", "--check", "--keep-vulkan-validation"]), \
-                patch.object(play.subprocess, "run") as run, \
-                patch.object(play.subprocess, "call") as launch, \
-                contextlib.redirect_stdout(output):
-            self.assertEqual(play.main(), 0)
-        result = json.loads(output.getvalue())
-        self.assertTrue(result["vulkan_validation_core"])
-        run.assert_not_called()
-        launch.assert_not_called()
-
-    def test_write_config_disables_validation_by_default(self):
-        self.config.write_text(json.dumps({"GPU": {}, "Vulkan": {}, "General": {}, "Log": {}}))
-        args = SimpleNamespace(resolution="1080p", vblank=60, fullscreen=True,
-                               fullscreen_mode="borderless", present_mode=None,
-                               no_log=False, keep_vulkan_validation=False)
-        play.write_config(args)
-        self.assertFalse(json.loads(self.config.read_text())["Vulkan"]["vkvalidation_core_enabled"])
-        args.keep_vulkan_validation = True
-        play.write_config(args)
-        self.assertTrue(json.loads(self.config.read_text())["Vulkan"]["vkvalidation_core_enabled"])
-
-    def test_invalid_vblank_fails_before_reading_or_writing_settings(self):
-        for rate in ("-1", "0", "29", "1001", "4294967296"):
-            with self.subTest(rate=rate):
-                before = self.snapshot()
-                errors = io.StringIO()
-                with patch("sys.argv", ["play.py", "--vblank", rate]), \
-                        patch.object(play, "make_profile") as profile, \
-                        patch.object(play, "write_config") as config, \
-                        patch.object(play.subprocess, "run") as run, \
-                        contextlib.redirect_stderr(errors), \
-                        self.assertRaises(SystemExit) as raised:
-                    play.main()
-                self.assertEqual(raised.exception.code, 2)
-                self.assertIn("--vblank must be between 30 and 1000", errors.getvalue())
-                self.assertEqual(before, self.snapshot())
-                profile.assert_not_called()
-                config.assert_not_called()
-                run.assert_not_called()
-
-    def test_missing_game_fails_without_claiming_success(self):
-        self.game.unlink()
-        output, errors = io.StringIO(), io.StringIO()
         with patch("sys.argv", ["play.py", "--check"]), \
-                contextlib.redirect_stdout(output), \
-                contextlib.redirect_stderr(errors), \
-                self.assertRaises(SystemExit) as raised:
+                contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
             play.main()
-        self.assertEqual(raised.exception.code, 2)
-        self.assertEqual(output.getvalue(), "")
-        self.assertIn("Required local file missing", errors.getvalue())
-        self.assertFalse(self.profile.exists())
+        self.assertEqual(error.exception.code, 2)
+        self.assertEqual(before, self.snapshot())
 
+    def test_old_standalone_switches_and_conflicting_actions_are_rejected(self):
+        for args in (["--engine", "nightly"], ["--engine", "release"], ["--fps", "120"],
+                     ["--keep-facegen"], ["--vblank", "120"], ["--present-mode", "Fifo"],
+                     ["--keep-vulkan-validation"], ["--check", "--install"], ["--stats", "--check"]):
+            with self.subTest(args=args), patch("sys.argv", ["play.py", *args]), \
+                    patch.object(play, "install_bbport") as install, \
+                    patch.object(play.subprocess, "call") as launch, \
+                    contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                play.main()
+            self.assertEqual(error.exception.code, 2)
+            install.assert_not_called()
+            launch.assert_not_called()
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_old_bbport_command_remains_a_bbport_only_alias(self):
+        output = io.StringIO()
+        with patch("sys.argv", ["play.py", "--engine", "bbport", "--check"]), contextlib.redirect_stdout(output):
+            self.assertEqual(play.main(), 0)
+        self.assertEqual(json.loads(output.getvalue())["engine"], str(play.BBPORT_RUN))
+
+    def test_launch_uses_bbport_and_explicit_logging_state(self):
+        before = self.snapshot()
+        with patch("sys.argv", ["play.py", "--no-log", "--windowed"]), \
+                patch.dict(os.environ, {"BB_SAVE_LOG": "1", "BB_FPS_SCALE": "6"}), \
+                patch.object(play.subprocess, "run") as run, \
+                patch.object(play.subprocess, "call", return_value=0) as launch, \
+                contextlib.redirect_stdout(io.StringIO()):
+            run.return_value.returncode = 1
+            self.assertEqual(play.main(), 0)
+        self.assertEqual(launch.call_args.args[0], ["bash", str(play.BBPORT_RUN)])
+        env = launch.call_args.kwargs["env"]
+        self.assertEqual(env["BB_GAME_DIR"], str(play.GAME_MERGED))
+        self.assertEqual(env["BB_DATA_DIR"], str(play.BBPORT_DATA))
+        self.assertEqual(env["BB_FPS"], "60")
+        self.assertEqual(env["BB_SAVE_LOG"], "0")
+        self.assertEqual(env["BB_FPS_SCALE"], "1")
+        self.assertEqual(env["BB_FULLSCREEN"], "0")
+        self.assertEqual(before, self.snapshot())
+
+    def test_running_game_is_left_alone(self):
+        with patch("sys.argv", ["play.py"]), patch.object(play.subprocess, "run") as run, \
+                patch.object(play.subprocess, "call") as launch, \
+                contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            run.return_value.returncode = 0
+            play.main()
+        launch.assert_not_called()
+
+    def test_install_needs_no_game_and_does_not_launch(self):
+        with patch("sys.argv", ["play.py", "--install"]), \
+                patch.object(play, "install_bbport") as install, \
+                patch.object(play, "launch_bbport") as launch:
+            self.assertEqual(play.main(), 0)
+        install.assert_called_once_with()
+        launch.assert_not_called()

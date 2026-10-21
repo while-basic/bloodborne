@@ -41,3 +41,19 @@ config-backups/
 *.log
 *.pem
 *.key
+
+# Local notes and proprietary game assets
+bloodborne-tasks.md
+open-tasks.md
+untitled.md
+*.dcx
+*.gfx
+*.fmg
+*.tpf
+*.bnd
+*.bdt
+*.bhd
+*.flver
+*.dds
+*.at9
+*.gguf
