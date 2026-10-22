@@ -1,0 +1,45 @@
+diff --git a/tools/host_import_probe.c b/tools/host_import_probe.c
+index 344600b..b3d763c 100644
+--- a/tools/host_import_probe.c
++++ b/tools/host_import_probe.c
+@@ -17,6 +17,18 @@
+ #include <time.h>
+ #include <unistd.h>
+ #include <vulkan/vulkan.h>
++#ifdef __APPLE__
++#include <fcntl.h>
++/* No memfd on macOS: an unlinked POSIX shared memory object, as the runtime makes it. */
++static int shm_fd(const char* name) {
++    char path[64];
++    snprintf(path, sizeof(path), "/%s-%d", name, (int)getpid());
++    const int fd = shm_open(path, O_RDWR | O_CREAT | O_EXCL, 0600);
++    if (fd >= 0) shm_unlink(path);
++    return fd;
++}
++#define memfd_create(name, flags) shm_fd(name)
++#endif
+ 
+ #define CHECK(x)                                                                                   \
+     do {                                                                                           \
+@@ -98,7 +110,11 @@ static void init(void) {
+                                     .pNext = &f13,
+                                     .queueCreateInfoCount = 1,
+                                     .pQueueCreateInfos = &qci,
++#ifdef __APPLE__
++                                    .enabledExtensionCount = 1, /* no dma-buf or fd export */
++#else
+                                     .enabledExtensionCount = 3,
++#endif
+                                     .ppEnabledExtensionNames = extensions};
+     CHECK(vkCreateDevice(physical, &dci, NULL, &device));
+     vkGetDeviceQueue(device, family, 0, &queue);
+@@ -524,7 +540,9 @@ int main(int argc, char** argv) {
+     printf("  mprotect on the imported view itself, then a 4 MiB GPU read: %.3f ms average\n",
+            own / 3);
+ 
++#ifndef __APPLE__
+     dmabuf_test(size, local, readback);
++#endif
+     printf("\nDone.\n");
+     return 0;
+ }
