@@ -1,0 +1,1199 @@
+diff --git a/docs/upscaler.md b/docs/upscaler.md
+index 6a68c80..26bda96 100644
+--- a/docs/upscaler.md
++++ b/docs/upscaler.md
+@@ -305,3 +305,22 @@ pass0_post, проходы модели 1..12 (за каждым `_post`, обн
+ **Поправка к A/B выше («кадр упирается в CPU»).** Те замеры шли, пока 12 зависших процессов
+ shadPS4 занимали по ядру. На свободной системе: «host copies» 1.6%, ожидание GPU ~41% — кадр
+ упирается в GPU, так что async compute для FSR снова имеет смысл.
++
++## MetalFX frame interpolation (macOS 26+, 2026-10-21)
++
++`BB_METALFX_INTERPOLATE=1` with `upscaler=metalfx` shows a MetalFX-interpolated
++frame between every two real ones (`gpu/shim/bbport_metalfx.mm`
++`Interpolator`, `vk_metalfx.cpp` `MetalFxUpscaler::Interpolate`,
++`vk_presenter.cpp`). Inputs: the frame as presented (blitted to RGBA16F) and the
++previous one, with this frame's depth and motion vectors from the MetalFX
++temporal scaler's staging buffers (the scaler must have run this frame). The
++interpolator is not chained to the scaler: at Native AA the scaler's output
++precedes post-processing and the HUD, and a HUD-less frame between HUD frames
++would flicker. The presenter shows the interpolated frame first and the real one
++half a measured frame interval later (exponential average of real intervals),
++so every frame arrives half an interval late. The HUD is interpolated with the
++scene (`uiTexture` is nil): expect ghosting on moving HUD elements. The camera's
++far plane is not read from the game (10,000 is passed); near and the vertical
++field of view come from `CameraMotion`. The frame log gains a `presented`
++column (presents per flip, 1 or 2). Failures switch interpolation off with one
++`Upscaler: MetalFX frame interpolation off (...)` line; the game goes on.
+diff --git a/gpu/shadps4/core/libraries/videoout/driver.cpp b/gpu/shadps4/core/libraries/videoout/driver.cpp
+index 939d316..4810367 100644
+--- a/gpu/shadps4/core/libraries/videoout/driver.cpp
++++ b/gpu/shadps4/core/libraries/videoout/driver.cpp
+@@ -502,14 +502,14 @@ void VideoOutDriver::Flip(const Request& req) {
+                                    "images,image_mb,buffer_mb,protect_ms,resident_ms,create_ms,"
+                                    "refresh_ms,write_fault_ms,read_faults,guest_copy_mb,draws,"
+                                    "dispatches,submissions,compiles,preupload_mb,kernel_ms,alloc_mb,"
+-                                   "free_mb\n");
++                                   "free_mb,presented\n");
+             }
+             return file;
+         }();
+         if (frame_log) {
+             static const auto log_start = now;
+             static u64 log_twf, log_tick, log_present, log_compiles, log_rf, log_preupload;
+-            static u64 log_alloc, log_free;
++            static u64 log_alloc, log_free, log_presents;
+             const u64 tick = BbStats::tick_wait_ns.load(), present = BbStats::present_wait_ns.load();
+             const u64 compiles_now = Vulkan::g_bb_compiles.load();
+             // tick_wait_ns and the compile count are reset every stats window.
+@@ -520,7 +520,7 @@ void VideoOutDriver::Flip(const Request& req) {
+             };
+             std::fprintf(frame_log,
+                          "%.4f,%.2f,%.2f,%.2f,%.2f,%llu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%llu,"
+-                         "%.2f,%llu,%llu,%llu,%llu,%.2f,%.2f,%.1f,%.1f\n",
++                         "%.2f,%llu,%llu,%llu,%llu,%.2f,%.2f,%.1f,%.1f,%llu\n",
+                          std::chrono::duration<double>(now - log_start).count(), frame_ms,
+                          delta(present, log_present) / 1e6, delta(tick, log_tick) / 1e6,
+                          last_gpu_ns ? (gpu_ns - last_gpu_ns) / 1e6 : 0.0,
+@@ -538,7 +538,9 @@ void VideoOutDriver::Flip(const Request& req) {
+                          delta(BbStats::preupload_bytes.load(), log_preupload) / 1e6,
+                          last_gpu_ns ? (sys_us - last_sys) / 1e3 : 0.0,
+                          delta(BbStats::device_alloc_bytes.load(), log_alloc) / 1e6,
+-                         delta(BbStats::device_free_bytes.load(), log_free) / 1e6);
++                         delta(BbStats::device_free_bytes.load(), log_free) / 1e6,
++                         static_cast<unsigned long long>(
++                             delta(BbStats::presents.load(), log_presents)));
+             static u32 unflushed = 0;
+             if (++unflushed >= 120) {
+                 std::fflush(frame_log);
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
+index 21a2260..700f5a7 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
+@@ -6,6 +6,7 @@
+ #include "video_core/amdgpu/pixel_format.h"
+ #include "video_core/renderer_vulkan/liverpool_to_vk.h"
+ 
++#include <atomic>
+ #include <magic_enum/magic_enum.hpp>
+ 
+ #define INVALID_NUMBER_FORMAT_COMBO                                                                \
+@@ -793,6 +794,29 @@ vk::Format SurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat nu
+     return result;
+ }
+ 
++vk::Format VertexFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format) {
++    const vk::Format result = TrySurfaceFormat(data_format, num_format);
++    if (result != vk::Format::eUndefined || data_format == AmdGpu::DataFormat::FormatInvalid) {
++        return result;
++    }
++    static std::atomic<u64> count{0};
++    const u64 n = count.fetch_add(1, std::memory_order_relaxed) + 1;
++    if (n <= 8 || (n & (n - 1)) == 0) {
++        LOG_WARNING(Render_Vulkan,
++                    "Unknown vertex data_format={} and num_format={}, using a 32-bit stand-in "
++                    "({} so far)",
++                    static_cast<u32>(data_format), static_cast<u32>(num_format), n);
++    }
++    switch (AmdGpu::GetNumberClass(num_format)) {
++    case AmdGpu::NumberClass::Sint:
++        return vk::Format::eR32Sint;
++    case AmdGpu::NumberClass::Uint:
++        return vk::Format::eR32Uint;
++    default:
++        return vk::Format::eR32Sfloat;
++    }
++}
++
+ static constexpr DepthFormatInfo CreateDepthFormatInfo(
+     const DepthBuffer::ZFormat z_format, const DepthBuffer::StencilFormat stencil_format,
+     const vk::Format vk_format) {
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
+index 848a061..fd5d256 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
+@@ -67,6 +67,11 @@ vk::Format SurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat nu
+ /// readers such as the draw-preparation workers.
+ vk::Format TrySurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format);
+ 
++/// bbport: SurfaceFormat for vertex attributes. A V# the guest is still writing can carry an
++/// unknown pair (seen: 15/5 and 6/0); a 32-bit format of the same number class stands in, so one
++/// draw reads junk instead of the process stopping.
++vk::Format VertexFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format);
++
+ struct DepthFormatInfo {
+     AmdGpu::DepthBuffer::ZFormat z_format;
+     AmdGpu::DepthBuffer::StencilFormat stencil_format;
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+index 3d810f8..31c81b9 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+@@ -456,7 +456,7 @@ void GraphicsPipeline::GetVertexInputs(
+         attributes.push_back(Attribute{
+             .location = attrib.semantic,
+             .binding = attrib.semantic,
+-            .format = LiverpoolToVK::SurfaceFormat(buffer.GetDataFmt(), buffer.GetNumberFmt()),
++            .format = LiverpoolToVK::VertexFormat(buffer.GetDataFmt(), buffer.GetNumberFmt()),
+             .offset = 0,
+         });
+         bindings.push_back(Binding{
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.cpp
+index 3e0ec53..86fb96d 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.cpp
+@@ -435,9 +435,208 @@ bool MetalFxUpscaler::Run(const Frame& frame) {
+             });
+         scheduler.Flush(info);
+     }
++    ran_this_frame = true;
+     return true;
+ }
+ 
++bool MetalFxUpscaler::EnsureInterpolator(const Interpolation& in) {
++    if (interpolator && in.width == interp_width && in.height == interp_height) {
++        return true;
++    }
++    scheduler.Finish();
++    interpolator.reset();
++    for (auto& s : interp_staging) {
++        DestroyStaging(s);
++    }
++    interp_color = VideoCore::UniqueImage{};
++    interp_width = in.width;
++    interp_height = in.height;
++    interp_have_previous = false;
++    const vk::DeviceSize pixels = vk::DeviceSize(in.width) * in.height;
++    for (auto& s : interp_staging) {
++        if (!CreateStaging(s, pixels * 8)) {
++            interp_off = true;
++            std::printf("Upscaler: MetalFX frame interpolation off (cannot allocate exportable "
++                        "staging buffers)\n");
++            return false;
++        }
++    }
++    interp_color = VideoCore::UniqueImage{instance.GetDevice(), instance.GetAllocator()};
++    interp_color.Create({
++        .imageType = vk::ImageType::e2D,
++        .format = vk::Format::eR16G16B16A16Sfloat,
++        .extent = {in.width, in.height, 1},
++        .mipLevels = 1,
++        .arrayLayers = 1,
++        .samples = vk::SampleCountFlagBits::e1,
++        .tiling = vk::ImageTiling::eOptimal,
++        .usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
++    });
++    std::string error;
++    interpolator = BbMetalFx::Interpolator::Create(
++        {.in_width = width, .in_height = height, .out_width = in.width, .out_height = in.height},
++        {interp_staging[0].heap, staging[1].heap, staging[2].heap, interp_staging[1].heap}, error);
++    if (!interpolator) {
++        interp_off = true;
++        std::printf("Upscaler: MetalFX frame interpolation off (%s)\n", error.c_str());
++        return false;
++    }
++    std::printf("Upscaler: MetalFX frame interpolation on, %ux%u (depth and motion %ux%u)\n",
++                in.width, in.height, width, height);
++    return true;
++}
++
++bool MetalFxUpscaler::Interpolate(const Interpolation& in) {
++    if (!supported || fatal || interp_off || !scaler || !ran_this_frame) {
++        return false;
++    }
++    ran_this_frame = false;
++    if (!EnsureInterpolator(in)) {
++        return false;
++    }
++    const auto fail = [&](const std::string& reason) {
++        interp_off = true;
++        std::printf("Upscaler: MetalFX frame interpolation off (%s)\n", reason.c_str());
++        return false;
++    };
++    {
++        std::string error;
++        if (async && interpolator->TakeError(error)) {
++            return fail(error);
++        }
++    }
++    // The same decision as the Metal side (Interpolator::Encode).
++    const bool produce = interp_have_previous && !in.reset;
++    interp_have_previous = true;
++
++    auto cmd = scheduler.CommandBuffer();
++    constexpr auto rw = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite;
++    const vk::MemoryBarrier2 before_copy{
++        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
++        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite,
++        .dstStageMask = vk::PipelineStageFlagBits2::eTransfer,
++        .dstAccessMask = vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eTransferWrite,
++    };
++    cmd.pipelineBarrier2({.memoryBarrierCount = 1, .pMemoryBarriers = &before_copy});
++    const vk::ImageSubresourceRange color_range{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
++    const auto image_barrier = [&](vk::Image image, vk::ImageLayout old_layout,
++                                   vk::PipelineStageFlags2 src, vk::AccessFlags2 src_access,
++                                   vk::PipelineStageFlags2 dst, vk::AccessFlags2 dst_access) {
++        const vk::ImageMemoryBarrier2 barrier{
++            .srcStageMask = src,
++            .srcAccessMask = src_access,
++            .dstStageMask = dst,
++            .dstAccessMask = dst_access,
++            .oldLayout = old_layout,
++            .newLayout = vk::ImageLayout::eGeneral,
++            .image = image,
++            .subresourceRange = color_range,
++        };
++        cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
++    };
++    // The presented frame (any format) as RGBA16F, then into the exported buffer.
++    image_barrier(vk::Image(interp_color), vk::ImageLayout::eUndefined,
++                  vk::PipelineStageFlagBits2::eAllCommands, rw,
++                  vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
++    const std::array<vk::Offset3D, 2> whole{vk::Offset3D{0, 0, 0},
++                                            vk::Offset3D{s32(in.width), s32(in.height), 1}};
++    const vk::ImageBlit blit{
++        .srcSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
++        .srcOffsets = whole,
++        .dstSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
++        .dstOffsets = whole,
++    };
++    cmd.blitImage(in.color, vk::ImageLayout::eGeneral, vk::Image(interp_color),
++                  vk::ImageLayout::eGeneral, blit, vk::Filter::eNearest);
++    image_barrier(vk::Image(interp_color), vk::ImageLayout::eGeneral,
++                  vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
++                  vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
++    const vk::BufferImageCopy region{
++        .imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
++        .imageExtent = {in.width, in.height, 1},
++    };
++    cmd.copyImageToBuffer(vk::Image(interp_color), vk::ImageLayout::eGeneral,
++                          interp_staging[0].buffer, region);
++    const vk::MemoryBarrier2 to_metal{
++        .srcStageMask = vk::PipelineStageFlagBits2::eTransfer,
++        .srcAccessMask = vk::AccessFlagBits2::eTransferWrite,
++        .dstStageMask = vk::PipelineStageFlagBits2::eHost,
++        .dstAccessMask = vk::AccessFlagBits2::eHostRead,
++    };
++    cmd.pipelineBarrier2({.memoryBarrierCount = 1, .pMemoryBarriers = &to_metal});
++
++    static const bool invert_jitter = EnvOn("BB_METALFX_INVERT_JITTER");
++    static const bool invert_motion = EnvOn("BB_METALFX_INVERT_MOTION");
++    static const bool depth_reversed = EnvOn("BB_METALFX_DEPTH_REVERSED");
++    const float jitter_sign = invert_jitter ? -1.0f : 1.0f;
++    const float motion_sign = invert_motion ? -1.0f : 1.0f;
++    BbMetalFx::InterpolatorFrame metal{.delta_time = in.delta_time,
++                                       .near_plane = in.near_plane,
++                                       .far_plane = in.far_plane,
++                                       .fov_y = in.fov_y,
++                                       .aspect = in.aspect,
++                                       .jitter_x = jitter_sign * in.jitter[0],
++                                       .jitter_y = jitter_sign * in.jitter[1],
++                                       .motion_scale_x = motion_sign,
++                                       .motion_scale_y = motion_sign,
++                                       .reset = in.reset,
++                                       .depth_reversed = depth_reversed};
++    const u64 copies_tick = scheduler.CurrentTick();
++    if (mode == Mode::Sync) {
++        scheduler.Finish();
++        std::string error;
++        interpolator->Encode(metal, error);
++        if (!error.empty()) {
++            return fail(error);
++        }
++    } else if (mode == Mode::Events) {
++        scheduler.Flush();
++        metal.wait_event = work_event;
++        metal.wait_value = copies_tick;
++        metal.signal_event = done_event;
++        metal.signal_value = done_value + 1;
++        std::string error;
++        interpolator->Encode(metal, error);
++        if (!error.empty()) {
++            return fail(error);
++        }
++    } else {
++        scheduler.Flush();
++    }
++
++    cmd = scheduler.CommandBuffer();
++    if (produce) {
++        image_barrier(in.output, vk::ImageLayout::eUndefined,
++                      vk::PipelineStageFlagBits2::eAllCommands, rw,
++                      vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
++        cmd.copyBufferToImage(interp_staging[1].buffer, in.output, vk::ImageLayout::eGeneral,
++                              region);
++        image_barrier(in.output, vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits2::eTransfer,
++                      vk::AccessFlagBits2::eTransferWrite,
++                      vk::PipelineStageFlagBits2::eAllCommands, rw);
++    }
++    if (mode == Mode::Events) {
++        ++done_value;
++        SubmitInfo info{};
++        info.AddWait(done_semaphore, done_value);
++        scheduler.Flush(info);
++    } else if (mode == Mode::SubmitThread) {
++        SubmitInfo info{};
++        info.before_submit.push_back(
++            [this, metal, copies_tick, work = scheduler.GetWorkSemaphore()] {
++                work->Wait(copies_tick);
++                std::string error;
++                interpolator->Encode(metal, error);
++                if (!error.empty()) {
++                    std::scoped_lock lock{deferred_mutex};
++                    deferred_error = error;
++                }
++            });
++        scheduler.Flush(info);
++    }
++    return produce;
++}
++
+ #else // not macOS (or Vulkan headers without VK_EXT_external_memory_metal)
+ 
+ MetalFxUpscaler::MetalFxUpscaler(const Instance& instance_, Scheduler& scheduler_)
+@@ -457,6 +656,10 @@ bool MetalFxUpscaler::Run(const Frame&) {
+     return false;
+ }
+ 
++bool MetalFxUpscaler::Interpolate(const Interpolation&) {
++    return false;
++}
++
+ #endif
+ 
+ } // namespace Vulkan
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.h b/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.h
+index 096c9f9..6af2352 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_metalfx.h
+@@ -18,9 +18,11 @@
+ 
+ #include "common/types.h"
+ #include "video_core/renderer_vulkan/vk_common.h"
++#include "video_core/texture_cache/image.h"
+ 
+ namespace BbMetalFx {
+ class Scaler;
++class Interpolator;
+ }
+ 
+ namespace Vulkan {
+@@ -74,6 +76,21 @@ public:
+     /// callers must fetch CommandBuffer() again.
+     bool Run(const Frame& frame);
+ 
++    /// Frame interpolation (BB_METALFX_INTERPOLATE=1): the frame as presented and the previous
++    /// one, with this frame's depth and motion from the last Run, give the frame between them.
++    struct Interpolation {
++        vk::Image color;   ///< the frame as presented, General layout, TransferSrc usage
++        u32 width, height; ///< its size, the output size
++        vk::Image output;  ///< RGBA16F, the same size; General layout afterwards
++        float delta_time;  ///< seconds since the previous presented frame
++        float near_plane, far_plane, fov_y, aspect;
++        std::array<float, 2> jitter; ///< render pixels, the FSR 3 convention
++        bool reset;
++    };
++    /// True when `output` holds the interpolated frame: needs a Run this frame and a previous
++    /// frame. Ends the submission like Run: callers fetch CommandBuffer() again.
++    bool Interpolate(const Interpolation& in);
++
+ private:
+     struct Staging {
+         vk::Buffer buffer;
+@@ -84,6 +101,7 @@ private:
+     bool CreateStaging(Staging& staging, vk::DeviceSize size);
+     void DestroyStaging(Staging& staging);
+     bool EnsureResources(const Frame& frame);
++    bool EnsureInterpolator(const Interpolation& in);
+     void Fail(std::string reason, bool permanent);
+ 
+     const Instance& instance;
+@@ -108,6 +126,14 @@ private:
+     u64 done_value = 0;
+     std::array<Staging, 4> staging{}; ///< color, depth, motion, output
+     std::unique_ptr<BbMetalFx::Scaler> scaler;
++    // Interpolation: the presented frame as RGBA16F, its exported copy and the output's.
++    std::unique_ptr<BbMetalFx::Interpolator> interpolator;
++    std::array<Staging, 2> interp_staging{}; ///< color, output
++    VideoCore::UniqueImage interp_color;
++    u32 interp_width = 0, interp_height = 0;
++    bool ran_this_frame = false;       ///< Run succeeded since the last Interpolate
++    bool interp_have_previous = false; ///< mirrors the Metal side's previous-frame state
++    bool interp_off = false;           ///< a failure switched interpolation off
+     u32 width = 0, height = 0, out_width = 0, out_height = 0;
+     vk::Format color_format = vk::Format::eUndefined;
+     bool hdr = false;
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+index 776311e..62d8b05 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+@@ -782,7 +782,7 @@ bool PipelineCache::RefreshGraphicsStages(PipelineSelection& sel) {
+                        "Vertex attribute binding count exceeded limit: {} >= {}", vertex_binding,
+                        MaxVertexBufferCount);
+             key.vertex_buffer_formats[vertex_binding++] =
+-                Vulkan::LiverpoolToVK::SurfaceFormat(buffer.GetDataFmt(), buffer.GetNumberFmt());
++                Vulkan::LiverpoolToVK::VertexFormat(buffer.GetDataFmt(), buffer.GetNumberFmt());
+         }
+     }
+ 
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.cpp
+index 31421c6..c7140bd 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.cpp
+@@ -2,6 +2,8 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include "common/debug.h"
++#include <thread>
++#include "bbport_settings.h"
+ #include "common/elf_info.h"
+ #include "common/io_file.h"
+ #include "common/path_util.h"
+@@ -143,6 +145,8 @@ Presenter::Presenter(Frontend::WindowSDL& window_, AmdGpu::Liverpool* liverpool_
+         auto fence = Check<"create present done fence">(
+             device.createFence({.flags = vk::FenceCreateFlagBits::eSignaled}));
+         frame.present_done = fence;
++        frame.interpolated_done = Check<"create interpolated done fence">(
++            device.createFence({.flags = vk::FenceCreateFlagBits::eSignaled}));
+         free_queue.push(&frame);
+     }
+ 
+@@ -171,6 +175,11 @@ Presenter::~Presenter() {
+         vmaDestroyImage(instance.GetAllocator(), frame.image, frame.allocation);
+         device.destroyImageView(frame.image_view);
+         device.destroyFence(frame.present_done);
++        if (frame.interpolated) {
++            vmaDestroyImage(instance.GetAllocator(), frame.interpolated,
++                            frame.interpolated_allocation);
++        }
++        device.destroyFence(frame.interpolated_done);
+     }
+ }
+ 
+@@ -240,6 +249,36 @@ void Presenter::RecreateFrame(Frame* frame, u32 width, u32 height) {
+     frame->height = height;
+ 
+     frame->is_hdr = swapchain.GetHDR();
++
++    // bbport: MetalFX frame interpolation: an RGBA16F image of the frame's size for the frame
++    // between the previous one and this.
++    if (frame->interpolated) {
++        vmaDestroyImage(instance.GetAllocator(), frame->interpolated,
++                        frame->interpolated_allocation);
++        frame->interpolated = nullptr;
++    }
++    if (BbSettings::InterpolationRequested()) {
++        const vk::ImageCreateInfo interpolated_info = {
++            .imageType = vk::ImageType::e2D,
++            .format = vk::Format::eR16G16B16A16Sfloat,
++            .extent = {width, height, 1},
++            .mipLevels = 1,
++            .arrayLayers = 1,
++            .samples = vk::SampleCountFlagBits::e1,
++            .usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc,
++        };
++        VkImageCreateInfo unsafe_interpolated_info =
++            static_cast<VkImageCreateInfo>(interpolated_info);
++        VkImage unsafe_interpolated{};
++        if (vmaCreateImage(instance.GetAllocator(), &unsafe_interpolated_info, &alloc_info,
++                           &unsafe_interpolated, &frame->interpolated_allocation,
++                           nullptr) == VK_SUCCESS) {
++            frame->interpolated = vk::Image{unsafe_interpolated};
++            SetObjectName(device, frame->interpolated, "Interpolated frame image #{}", frame->id);
++        } else {
++            std::printf("Upscaler: MetalFX frame interpolation off (no memory for the frame)\n");
++        }
++    }
+ }
+ 
+ Frame* Presenter::PrepareLastFrame() {
+@@ -442,6 +481,15 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup&
+         }
+     });
+ 
++    // bbport: MetalFX frame interpolation: the frame between the previous one and this one, from
++    // the frame as presented (BB_METALFX_INTERPOLATE=1). Ends the submission like the upscaler.
++    frame->has_interpolated = false;
++    if (frame->interpolated && BbSettings::InterpolationRequested()) {
++        frame->has_interpolated = rasterizer->GetUpscaler().Interpolate(
++            frame->image, frame->width, frame->height, frame->interpolated,
++            float(present_interval_ns.load(std::memory_order_relaxed)) * 1e-9f);
++    }
++
+     // Flush frame creation commands.
+     BbStats::frame_number.fetch_add(1, std::memory_order_relaxed); // bbport: game frames shown
+     frame->ready_semaphore = draw_scheduler.GetWorkSemaphore()->Handle();
+@@ -546,46 +594,20 @@ Frame* Presenter::PrepareBlankFrame(bool present_thread) {
+     return frame;
+ }
+ 
+-void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame) {
+-    // Free the frame for reuse
+-    const auto free_frame = [&] {
+-        if (!is_reusing_frame) {
+-            last_submit_frame = frame;
+-            std::scoped_lock fl{free_mutex};
+-            free_queue.push(frame);
+-            free_cv.notify_one();
+-        }
+-    };
+-
+-    // bbport: nothing to present to while the window is minimised (a 0x0 surface, issue #31).
+-    if (window.GetWidth() == 0 || window.GetHeight() == 0) {
+-        free_frame();
+-        return;
+-    }
+-    // Recreate the swapchain if the window was resized (or was minimised at the last try).
+-    if (window.GetWidth() != swapchain.GetWidth() || window.GetHeight() != swapchain.GetHeight() ||
+-        !swapchain.IsPresentable()) {
+-        swapchain.Recreate(window.GetWidth(), window.GetHeight());
+-        if (!swapchain.IsPresentable()) {
+-            free_frame();
+-            return;
+-        }
+-    }
+-
++bool Presenter::PresentImage(vk::Image source, const Frame* frame, vk::Fence done) {
+     if (!swapchain.AcquireNextImage()) {
+         swapchain.Recreate(window.GetWidth(), window.GetHeight());
+         if (!swapchain.AcquireNextImage()) {
+             // User resizes the window too fast and GPU can't keep up. Skip this frame.
+             LOG_WARNING(Render_Vulkan, "Skipping frame!");
+-            free_frame();
+-            return;
++            return false;
+         }
+     }
+ 
+     // Reset fence for queue submission. Do it here instead of GetRenderFrame() because we may
+     // skip frame because of slow swapchain recreation. If a frame skip occurs, we skip signal
+     // the frame's present fence and future GetRenderFrame() call will hang waiting for this frame.
+-    const auto reset_result = instance.GetDevice().resetFences(frame->present_done);
++    const auto reset_result = instance.GetDevice().resetFences(done);
+     ASSERT_MSG(reset_result == vk::Result::eSuccess,
+                "Unexpected error resetting present done fence: {}", vk::to_string(reset_result));
+ 
+@@ -593,7 +615,7 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+     const vk::Image swapchain_image = swapchain.Image();
+     auto& scheduler = present_scheduler;
+     const auto cmdbuf = scheduler.CommandBuffer();
+-    DumpFinalFrameIfDue(instance, scheduler, cmdbuf, frame->image, frame->width, frame->height,
++    DumpFinalFrameIfDue(instance, scheduler, cmdbuf, source, frame->width, frame->height,
+                         swapchain.GetSurfaceFormat().format);
+ 
+     if (EmulatorSettings.IsVkHostMarkersEnabled()) {
+@@ -630,7 +652,7 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+                 .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+-                .image = frame->image,
++                .image = source,
+                 .subresourceRange = color_range,
+             },
+         };
+@@ -645,7 +667,7 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+         };
+         cmdbuf.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
+                                vk::DependencyFlagBits::eByRegion, clear_done, {}, {});
+-        cmdbuf.blitImage(frame->image, vk::ImageLayout::eTransferSrcOptimal, swapchain_image,
++        cmdbuf.blitImage(source, vk::ImageLayout::eTransferSrcOptimal, swapchain_image,
+                          vk::ImageLayout::eTransferDstOptimal,
+                          MakeImageBlitFit(frame->width, frame->height, extent.width, extent.height),
+                          vk::Filter::eLinear);
+@@ -672,7 +694,7 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+                 .newLayout = vk::ImageLayout::eGeneral,
+                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+-                .image = frame->image,
++                .image = source,
+                 .subresourceRange = color_range,
+             },
+         };
+@@ -711,7 +733,7 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+     info.AddWait(swapchain.GetImageAcquiredSemaphore());
+     info.AddWait(frame->ready_semaphore, frame->ready_tick);
+     info.AddSignal(swapchain.GetPresentReadySemaphore());
+-    info.AddSignal(frame->present_done);
++    info.AddSignal(done);
+     scheduler.Flush(info);
+ 
+     // Present to swapchain.
+@@ -722,12 +744,75 @@ void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame)
+         }
+     }
+ 
++    BbStats::presents.fetch_add(1, std::memory_order_relaxed);
++    return true;
++}
++
++void Presenter::Present(Frame* frame, bool is_reusing_frame, bool is_game_frame) {
++    // Free the frame for reuse
++    const auto free_frame = [&] {
++        if (!is_reusing_frame) {
++            last_submit_frame = frame;
++            std::scoped_lock fl{free_mutex};
++            free_queue.push(frame);
++            free_cv.notify_one();
++        }
++    };
++
++    // bbport: nothing to present to while the window is minimised (a 0x0 surface, issue #31).
++    if (window.GetWidth() == 0 || window.GetHeight() == 0) {
++        free_frame();
++        return;
++    }
++    // Recreate the swapchain if the window was resized (or was minimised at the last try).
++    if (window.GetWidth() != swapchain.GetWidth() || window.GetHeight() != swapchain.GetHeight() ||
++        !swapchain.IsPresentable()) {
++        swapchain.Recreate(window.GetWidth(), window.GetHeight());
++        if (!swapchain.IsPresentable()) {
++            free_frame();
++            return;
++        }
++    }
++
++    // bbport: MetalFX frame interpolation: the frame between the previous one and this one goes
++    // first, the real one half a frame interval later (every frame arrives that much later).
++    if (frame->has_interpolated) {
++        const auto shown = std::chrono::steady_clock::now();
++        if (!PresentImage(frame->interpolated, frame, frame->interpolated_done)) {
++            free_frame();
++            return;
++        }
++        std::this_thread::sleep_until(
++            shown + std::chrono::nanoseconds(present_interval_ns.load(std::memory_order_relaxed) / 2));
++        // Its submission is done before the swapchain's semaphores serve the real frame.
++        const auto waited = instance.GetDevice().waitForFences(frame->interpolated_done, false,
++                                                               std::numeric_limits<u64>::max());
++        ASSERT_MSG(waited == vk::Result::eSuccess,
++                   "Unexpected error waiting for the interpolated frame: {}", vk::to_string(waited));
++    }
++    if (!PresentImage(frame->image, frame, frame->present_done)) {
++        free_frame();
++        return;
++    }
++    if (is_game_frame && !is_reusing_frame) {
++        // The real frames' interval, for the interpolator's pacing and delta time.
++        const auto now = std::chrono::steady_clock::now();
++        if (last_real_present != std::chrono::steady_clock::time_point{}) {
++            const s64 delta = std::clamp<s64>(
++                std::chrono::duration_cast<std::chrono::nanoseconds>(now - last_real_present).count(),
++                1'000'000, 100'000'000);
++            const s64 average = s64(present_interval_ns.load(std::memory_order_relaxed));
++            present_interval_ns.store(u64(average + (delta - average) / 8), std::memory_order_relaxed);
++        }
++        last_real_present = now;
++    }
+     free_frame();
+     if (!is_reusing_frame && is_game_frame) {
+         DebugState.IncFlipFrameNum();
+     }
+ }
+ 
++
+ Frame* Presenter::GetRenderFrame() {
+     // Wait for free presentation frames
+     Frame* frame;
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.h b/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.h
+index 0b3dc78..3410b37 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_presenter.h
+@@ -3,6 +3,9 @@
+ 
+ #pragma once
+ 
++#include <atomic>
++#include <chrono>
++
+ #include <deque>
+ 
+ #include <condition_variable>
+@@ -38,6 +41,11 @@ struct Frame {
+     u64 ready_tick;
+     bool is_hdr{false};
+     u8 id{};
++    // bbport (BB_METALFX_INTERPOLATE): the frame between the previous one and this, shown first.
++    vk::Image interpolated;
++    VmaAllocation interpolated_allocation{};
++    vk::Fence interpolated_done; ///< its presentation's submission
++    bool has_interpolated{false};
+ 
+ };
+ 
+@@ -106,6 +114,10 @@ private:
+     Frame* GetRenderFrame();
+ 
+     void RecreateFrame(Frame* frame, u32 width, u32 height);
++    /// Acquires a swapchain image, blits `source` (General layout, `frame`'s size) into it with
++    /// the overlay, submits (waiting for the frame, signalling `done`) and presents. False when
++    /// no image could be acquired (the frame is skipped).
++    bool PresentImage(vk::Image source, const Frame* frame, vk::Fence done);
+ 
+     void SetExpectedGameSize(s32 width, s32 height);
+ 
+@@ -124,6 +136,10 @@ private:
+     AmdGpu::Liverpool* liverpool;
+     Scheduler draw_scheduler;
+     std::deque<u64> recent_frame_ticks; ///< bbport: BB_FRAMES_AHEAD bound (PrepareFrame)
++    // bbport: MetalFX frame interpolation pacing: the real frames' interval (exponential average,
++    // read by PrepareFrame for the interpolator) and the last real presentation.
++    std::atomic<u64> present_interval_ns{16666667};
++    std::chrono::steady_clock::time_point last_real_present{};
+     Scheduler present_scheduler;
+     Scheduler flip_scheduler;
+     Swapchain swapchain;
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.cpp
+index 00898c7..e0a1cf4 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.cpp
+@@ -2303,6 +2303,26 @@ bool TemporalUpscaler::UseMetalFx() const {
+            !metalfx->Fatal();
+ }
+ 
++bool TemporalUpscaler::Interpolate(vk::Image color, u32 width, u32 height, vk::Image output,
++                                   float delta_time) {
++    if (!metalfx || !UseMetalFx() || !BbSettings::InterpolationRequested()) {
++        return false;
++    }
++    const float sign = BbToggle::Disabled(1u << 26) ? -1.0f : 1.0f;
++    // The camera's far plane is not read from the game: a distant one serves the linearization.
++    return metalfx->Interpolate({.color = color,
++                                 .width = width,
++                                 .height = height,
++                                 .output = output,
++                                 .delta_time = delta_time,
++                                 .near_plane = camera_motion.Near(),
++                                 .far_plane = 10000.0f,
++                                 .fov_y = camera_motion.VerticalFov(),
++                                 .aspect = float(width) / float(height),
++                                 .jitter = {sign * jitter[0], sign * jitter[1]},
++                                 .reset = reset});
++}
++
+ bool TemporalUpscaler::RecordMetalFx(const MetalFxUpscaler::Input& color,
+                                      const MetalFxUpscaler::Input& depth, u32 w, u32 h, u32 ow,
+                                      u32 oh, bool hdr) {
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.h b/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.h
+index d6a0330..7a25285 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.h
+@@ -126,6 +126,11 @@ public:
+         u32 width, height;
+     };
+     bool DisplayOverride(VAddr address, Display& display);
++    /// Presenter, BB_METALFX_INTERPOLATE=1: `output` (RGBA16F, color's size, General afterwards)
++    /// receives the frame half way between the previous presented frame and `color` (General).
++    /// False when no interpolated frame was made: first frame, reset, MetalFX not run this frame,
++    /// interpolation off or failed.
++    bool Interpolate(vk::Image color, u32 width, u32 height, vk::Image output, float delta_time);
+     /// BB_PRESENT_DUMP_TRIGGER: whether this presented frame is to be saved (consumes the trigger).
+     bool PresentDumpDue();
+     /// Saves `image` (General layout, 4 bytes a pixel) as present_<w>x<h> in BB_DUMP_DIR.
+diff --git a/gpu/shim/bbport_metalfx.h b/gpu/shim/bbport_metalfx.h
+index e3b82cb..615b52e 100644
+--- a/gpu/shim/bbport_metalfx.h
++++ b/gpu/shim/bbport_metalfx.h
+@@ -66,4 +66,52 @@ private:
+     std::unique_ptr<Impl> impl;
+ };
+ 
++/// Frame interpolation (macOS 26+): the frame as presented and the previous one, with this
++/// frame's depth and motion at render size, give the frame half way between them.
++struct InterpolatorConfig {
++    uint32_t in_width, in_height;   ///< depth and motion (render size)
++    uint32_t out_width, out_height; ///< color and output
++};
++/// MTLHeaps: color RGBA16F at output size, depth float32 and motion RG16F at render size, output
++/// RGBA16F at output size (tightly packed rows, as Heaps).
++struct InterpolatorHeaps {
++    void* color;
++    void* depth;
++    void* motion;
++    void* output;
++};
++struct InterpolatorFrame {
++    float delta_time; ///< seconds since the previous presented frame
++    float near_plane, far_plane, fov_y, aspect;
++    float jitter_x, jitter_y;             ///< render pixels
++    float motion_scale_x, motion_scale_y; ///< as Frame
++    bool reset;
++    bool depth_reversed;
++    void* wait_event = nullptr; ///< as Frame
++    uint64_t wait_value = 0;
++    void* signal_event = nullptr;
++    uint64_t signal_value = 0;
++};
++/// MetalFX frame interpolation loads and supports the MTLDevice that owns `heap`.
++bool InterpolationSupported(void* heap, std::string& reason);
++
++class Interpolator {
++public:
++    ~Interpolator();
++    static std::unique_ptr<Interpolator> Create(const InterpolatorConfig& config,
++                                                const InterpolatorHeaps& heaps, std::string& error);
++    /// Uploads this frame's inputs and keeps its color as the next frame's previous one. True when
++    /// the output buffer holds the interpolated frame; false without `error` on the first frame
++    /// and the frame after a reset (no previous frame), false with `error` on failure.
++    bool Encode(const InterpolatorFrame& frame, std::string& error);
++    /// The failure of an earlier asynchronous frame, once.
++    bool TakeError(std::string& error);
++
++    struct Impl;
++
++private:
++    explicit Interpolator(std::unique_ptr<Impl> impl);
++    std::unique_ptr<Impl> impl;
++};
++
+ } // namespace BbMetalFx
+diff --git a/gpu/shim/bbport_metalfx.mm b/gpu/shim/bbport_metalfx.mm
+index 45196b7..5181433 100644
+--- a/gpu/shim/bbport_metalfx.mm
++++ b/gpu/shim/bbport_metalfx.mm
+@@ -274,6 +274,245 @@ bool Supported(void* heap_handle, std::string& reason) {
+     }
+ }
+ 
++bool InterpolationSupported(void* heap_handle, std::string& reason) {
++    @autoreleasepool {
++        Class cls = NSClassFromString(@"MTLFXFrameInterpolatorDescriptor");
++        if (!cls) {
++            reason = "MetalFX frame interpolation needs macOS 26";
++            return false;
++        }
++        if (@available(macOS 26.0, *)) {
++            id<MTLHeap> heap = (__bridge id<MTLHeap>)heap_handle;
++            if (![cls supportsDevice:heap.device]) {
++                reason = "MetalFX frame interpolation is unsupported on this GPU";
++                return false;
++            }
++            return true;
++        }
++        reason = "MetalFX frame interpolation needs macOS 26";
++        return false;
++    }
++}
++
++struct Interpolator::Impl {
++    InterpolatorConfig config{};
++    id<MTLDevice> device;
++    id<MTLCommandQueue> queue;
++    id interpolator; ///< id<MTLFXFrameInterpolator> (macOS 26+)
++    id<MTLBuffer> color_buffer, depth_buffer, motion_buffer, output_buffer;
++    id<MTLTexture> color[2], depth, motion, output; ///< color: this frame and the previous one
++    unsigned current = 0; ///< color[current] receives this frame
++    bool have_previous = false;
++    bool reset_pending = true; ///< the next interpolated frame restarts the history
++    std::shared_ptr<Scaler::Impl::Errors> errors = std::make_shared<Scaler::Impl::Errors>();
++    id<MTLCommandBuffer> last;
++};
++
++Interpolator::Interpolator(std::unique_ptr<Impl> impl_) : impl{std::move(impl_)} {}
++
++Interpolator::~Interpolator() {
++    if (impl && impl->last) {
++        [impl->last waitUntilCompleted];
++    }
++}
++
++std::unique_ptr<Interpolator> Interpolator::Create(const InterpolatorConfig& config,
++                                                   const InterpolatorHeaps& heaps,
++                                                   std::string& error) {
++    @autoreleasepool {
++        if (!InterpolationSupported(heaps.color, error)) {
++            return nullptr;
++        }
++        if (@available(macOS 26.0, *)) {
++            auto impl = std::make_unique<Impl>();
++            impl->config = config;
++            id<MTLHeap> color_heap = (__bridge id<MTLHeap>)heaps.color;
++            impl->device = color_heap.device;
++            id<MTLDevice> device = impl->device;
++            Class cls = NSClassFromString(@"MTLFXFrameInterpolatorDescriptor");
++            MTLFXFrameInterpolatorDescriptor* descriptor = [[cls alloc] init];
++            descriptor.colorTextureFormat = MTLPixelFormatRGBA16Float;
++            descriptor.outputTextureFormat = MTLPixelFormatRGBA16Float;
++            descriptor.depthTextureFormat = MTLPixelFormatDepth32Float;
++            descriptor.motionTextureFormat = MTLPixelFormatRG16Float;
++            descriptor.inputWidth = config.in_width;
++            descriptor.inputHeight = config.in_height;
++            descriptor.outputWidth = config.out_width;
++            descriptor.outputHeight = config.out_height;
++            id<MTLFXFrameInterpolator> interpolator = [descriptor newFrameInterpolatorWithDevice:device];
++            if (!interpolator) {
++                error = "newFrameInterpolatorWithDevice failed";
++                return nullptr;
++            }
++            impl->interpolator = interpolator;
++            const auto texture = [&](MTLPixelFormat format, uint32_t w, uint32_t h,
++                                     MTLTextureUsage usage) -> id<MTLTexture> {
++                MTLTextureDescriptor* td =
++                    [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
++                                                                       width:w
++                                                                      height:h
++                                                                   mipmapped:NO];
++                td.storageMode = MTLStorageModePrivate;
++                td.usage = usage;
++                return [device newTextureWithDescriptor:td];
++            };
++            const uint32_t w = config.in_width, h = config.in_height;
++            const uint32_t ow = config.out_width, oh = config.out_height;
++            for (unsigned i = 0; i < 2; ++i) {
++                impl->color[i] = texture(MTLPixelFormatRGBA16Float, ow, oh,
++                                         interpolator.colorTextureUsage);
++            }
++            impl->depth = texture(MTLPixelFormatDepth32Float, w, h, interpolator.depthTextureUsage);
++            impl->motion = texture(MTLPixelFormatRG16Float, w, h, interpolator.motionTextureUsage);
++            impl->output = texture(MTLPixelFormatRGBA16Float, ow, oh, interpolator.outputTextureUsage);
++            if (!impl->color[0] || !impl->color[1] || !impl->depth || !impl->motion || !impl->output) {
++                error = "MetalFX interpolation texture creation failed";
++                return nullptr;
++            }
++            const auto buffer = [&](void* handle, NSUInteger length) -> id<MTLBuffer> {
++                id<MTLHeap> heap = (__bridge id<MTLHeap>)handle;
++                if (heap.device != device || heap.type != MTLHeapTypePlacement || heap.size < length) {
++                    return nil;
++                }
++                return [heap newBufferWithLength:length options:heap.resourceOptions offset:0];
++            };
++            impl->color_buffer = buffer(heaps.color, NSUInteger(ow) * oh * 8);
++            impl->depth_buffer = buffer(heaps.depth, NSUInteger(w) * h * 4);
++            impl->motion_buffer = buffer(heaps.motion, NSUInteger(w) * h * 4);
++            impl->output_buffer = buffer(heaps.output, NSUInteger(ow) * oh * 8);
++            if (!impl->color_buffer || !impl->depth_buffer || !impl->motion_buffer ||
++                !impl->output_buffer) {
++                error = "cannot alias the exported MTLHeaps with MTLBuffers";
++                return nullptr;
++            }
++            impl->queue = [device newCommandQueue];
++            if (!impl->queue) {
++                error = "newCommandQueue failed";
++                return nullptr;
++            }
++            impl->queue.label = @"bbport MetalFX interpolation";
++            return std::unique_ptr<Interpolator>(new Interpolator(std::move(impl)));
++        }
++        error = "MetalFX frame interpolation needs macOS 26";
++        return nullptr;
++    }
++}
++
++bool Interpolator::Encode(const InterpolatorFrame& frame, std::string& error) {
++    @autoreleasepool {
++        Impl& m = *impl;
++        const NSUInteger w = m.config.in_width, h = m.config.in_height;
++        const NSUInteger ow = m.config.out_width, oh = m.config.out_height;
++        id<MTLCommandBuffer> cmd = [m.queue commandBuffer];
++        if (!cmd) {
++            error = "commandBuffer failed";
++            return false;
++        }
++        const bool async = frame.wait_event && frame.signal_event;
++        id<MTLSharedEvent> wait_event = (__bridge id<MTLSharedEvent>)frame.wait_event;
++        id<MTLSharedEvent> signal_event = (__bridge id<MTLSharedEvent>)frame.signal_event;
++        if (async) {
++            [cmd encodeWaitForEvent:wait_event value:frame.wait_value];
++        }
++        const MTLOrigin zero = MTLOriginMake(0, 0, 0);
++        id<MTLBlitCommandEncoder> uploads = [cmd blitCommandEncoder];
++        const auto upload = [&](id<MTLBuffer> source, id<MTLTexture> target, NSUInteger width,
++                                NSUInteger height, NSUInteger bytes) {
++            [uploads copyFromBuffer:source
++                       sourceOffset:0
++                  sourceBytesPerRow:width * bytes
++                sourceBytesPerImage:width * height * bytes
++                         sourceSize:MTLSizeMake(width, height, 1)
++                          toTexture:target
++                   destinationSlice:0
++                   destinationLevel:0
++                  destinationOrigin:zero];
++        };
++        upload(m.color_buffer, m.color[m.current], ow, oh, 8);
++        upload(m.depth_buffer, m.depth, w, h, 4);
++        upload(m.motion_buffer, m.motion, w, h, 4);
++        [uploads endEncoding];
++
++        // The same decision as the Vulkan side (MetalFxUpscaler::Interpolate): no previous frame,
++        // or a reset: nothing comes out this time.
++        const bool produce = m.have_previous && !frame.reset;
++        if (frame.reset) {
++            m.reset_pending = true;
++        }
++        if (produce) {
++            if (@available(macOS 26.0, *)) {
++                id<MTLFXFrameInterpolator> fi = m.interpolator;
++                fi.colorTexture = m.color[m.current];
++                fi.prevColorTexture = m.color[m.current ^ 1];
++                fi.depthTexture = m.depth;
++                fi.motionTexture = m.motion;
++                fi.outputTexture = m.output;
++                fi.uiTexture = nil;
++                fi.deltaTime = frame.delta_time;
++                fi.nearPlane = frame.near_plane;
++                fi.farPlane = frame.far_plane;
++                fi.fieldOfView = frame.fov_y;
++                fi.aspectRatio = frame.aspect;
++                fi.jitterOffsetX = frame.jitter_x;
++                fi.jitterOffsetY = frame.jitter_y;
++                fi.motionVectorScaleX = frame.motion_scale_x;
++                fi.motionVectorScaleY = frame.motion_scale_y;
++                fi.depthReversed = frame.depth_reversed;
++                fi.shouldResetHistory = m.reset_pending;
++                [fi encodeToCommandBuffer:cmd];
++            }
++            m.reset_pending = false;
++            id<MTLBlitCommandEncoder> downloads = [cmd blitCommandEncoder];
++            [downloads copyFromTexture:m.output
++                             sourceSlice:0
++                             sourceLevel:0
++                            sourceOrigin:zero
++                              sourceSize:MTLSizeMake(ow, oh, 1)
++                                toBuffer:m.output_buffer
++                       destinationOffset:0
++                  destinationBytesPerRow:ow * 8
++                destinationBytesPerImage:ow * oh * 8];
++            [downloads endEncoding];
++        }
++        m.current ^= 1;
++        m.have_previous = true;
++        if (async) {
++            const uint64_t value = frame.signal_value;
++            [cmd encodeSignalEvent:signal_event value:value];
++            std::shared_ptr<Scaler::Impl::Errors> errors = m.errors;
++            [cmd addCompletedHandler:^(id<MTLCommandBuffer> done) {
++              if (done.status != MTLCommandBufferStatusCompleted) {
++                  if (signal_event.signaledValue < value) {
++                      signal_event.signaledValue = value;
++                  }
++                  std::scoped_lock lock{errors->mutex};
++                  errors->text = "interpolation command buffer failed: " + Describe(done.error);
++              }
++            }];
++            m.last = cmd;
++            [cmd commit];
++            return produce;
++        }
++        [cmd commit];
++        [cmd waitUntilCompleted];
++        if (cmd.status != MTLCommandBufferStatusCompleted) {
++            error = "interpolation command buffer failed: " + Describe(cmd.error);
++            return false;
++        }
++        return produce;
++    }
++}
++
++bool Interpolator::TakeError(std::string& error) {
++    std::scoped_lock lock{impl->errors->mutex};
++    if (impl->errors->text.empty()) {
++        return false;
++    }
++    error = std::move(impl->errors->text);
++    impl->errors->text.clear();
++    return true;
++}
++
+ bool Scaler::TakeError(std::string& error) {
+     std::scoped_lock lock{impl->errors->mutex};
+     if (impl->errors->text.empty()) {
+diff --git a/gpu/shim/bbport_overlay.cpp b/gpu/shim/bbport_overlay.cpp
+index 3763057..41dccf5 100644
+--- a/gpu/shim/bbport_overlay.cpp
++++ b/gpu/shim/bbport_overlay.cpp
+@@ -593,11 +593,19 @@ void FpsCounter() {
+     ImGui::SetNextWindowPos(
+         ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - pad, viewport->WorkPos.y + pad),
+         ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+-    ImGui::SetNextWindowBgAlpha(0.5f);
++    // bbport (CSR): BB_FPS_SCALE=N draws the counter N times larger on a darker panel, so it
++    // stays readable in recordings and streams.
++    static const float fps_scale = [] {
++        const char* env = std::getenv("BB_FPS_SCALE");
++        const float v = env ? float(std::atof(env)) : 1.0f;
++        return v >= 1.0f && v <= 6.0f ? v : 1.0f;
++    }();
++    ImGui::SetNextWindowBgAlpha(fps_scale > 1.0f ? 0.75f : 0.5f);
+     ImGui::Begin("##fps", nullptr,
+                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                      ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav |
+                      ImGuiWindowFlags_NoFocusOnAppearing);
++    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * fps_scale);
+     const auto& s = BbSettings::Get();
+     ImGui::Text(BbSettings::MenuText("%.0f FPS  %.1f ms  %s", "%.0f FPS  %.1f мс  %s"),
+                 frame_ms_avg > 0.0f ? 1000.0f / frame_ms_avg : 0.0f, frame_ms_avg,
+@@ -607,6 +615,7 @@ void FpsCounter() {
+                 : s.upscaler == BbSettings::UpscalerTaa    ? "TAA"
+                 : s.upscaler == BbSettings::UpscalerMetalFx ? "MetalFX"
+                                                            : "");
++    ImGui::PopFont();
+     ImGui::End();
+ }
+ 
+diff --git a/gpu/shim/bbport_settings.cpp b/gpu/shim/bbport_settings.cpp
+index a5ae071..199d1dd 100644
+--- a/gpu/shim/bbport_settings.cpp
++++ b/gpu/shim/bbport_settings.cpp
+@@ -301,6 +301,11 @@ const char* PresetName(int preset) {
+     return names[std::clamp(preset, 0, PresetCount - 1)];
+ }
+ 
++bool InterpolationRequested() {
++    const char* env = std::getenv("BB_METALFX_INTERPOLATE");
++    return env && env[0] == '1' && Get().upscaler == UpscalerMetalFx;
++}
++
+ const char* UpscalerName(int upscaler) {
+     static constexpr const char* names[UpscalerCount] = {"off",    "fsr3", "fsr4",
+                                                          "fsr411", "taa",  "metalfx"};
+diff --git a/gpu/shim/bbport_settings.h b/gpu/shim/bbport_settings.h
+index fb2a701..31563b1 100644
+--- a/gpu/shim/bbport_settings.h
++++ b/gpu/shim/bbport_settings.h
+@@ -116,4 +116,8 @@ float PresetScale(int preset);
+ const char* PresetName(int preset);
+ const char* UpscalerName(int upscaler);
+ 
++/// bbport: MetalFX frame interpolation (vk_metalfx): BB_METALFX_INTERPOLATE=1 with MetalFX
++/// selected. Read every time: the menu can change the upscaler.
++bool InterpolationRequested();
++
+ } // namespace BbSettings
+diff --git a/gpu/shim/bbport_toggles.h b/gpu/shim/bbport_toggles.h
+index ff19767..77417eb 100644
+--- a/gpu/shim/bbport_toggles.h
++++ b/gpu/shim/bbport_toggles.h
+@@ -174,6 +174,8 @@ inline std::atomic<std::uint64_t> sync_recording_ns{0}, host_copies_wait_ns{0},
+ inline std::atomic<std::uint64_t> present_wait_ns{0};
+ /// Frames shown (Presenter::PrepareFrame), and bytes the background pre-upload put into the arena.
+ inline std::atomic<std::uint32_t> frame_number{0};
++/// bbport: swapchain presents (two a frame with MetalFX frame interpolation; BB_FRAME_LOG).
++inline std::atomic<std::uint64_t> presents{0};
+ inline std::atomic<std::uint64_t> preupload_bytes{0};
+ /// Device memory allocated (VMA blocks, arena residency) and freed, bytes.
+ inline std::atomic<std::uint64_t> device_alloc_bytes{0}, device_free_bytes{0};
+diff --git a/gpu/third_party/fsr-vulkan b/gpu/third_party/fsr-vulkan
+--- a/gpu/third_party/fsr-vulkan
++++ b/gpu/third_party/fsr-vulkan
+@@ -1 +1 @@
+-Subproject commit c64f093404125e960813f95f1996c14780f0dd69
++Subproject commit c64f093404125e960813f95f1996c14780f0dd69-dirty
+diff --git a/tests/test_upscaler_support.cpp b/tests/test_upscaler_support.cpp
+index af3f866..eeac1af 100644
+--- a/tests/test_upscaler_support.cpp
++++ b/tests/test_upscaler_support.cpp
+@@ -87,6 +87,16 @@ int main() {
+     setenv("BB_RENDER_RES", "", 1);
+     assert(!FixedRenderSession() && !ResolutionNeedsRestart());
+     unsetenv("BB_RENDER_RES");
++    // MetalFX frame interpolation: BB_METALFX_INTERPOLATE=1 with MetalFX selected only.
++    unsetenv("BB_METALFX_INTERPOLATE");
++    s.upscaler = UpscalerMetalFx;
++    assert(!InterpolationRequested());
++    setenv("BB_METALFX_INTERPOLATE", "1", 1);
++    s.upscaler = UpscalerTaa;
++    assert(!InterpolationRequested());
++    s.upscaler = UpscalerMetalFx;
++    assert(InterpolationRequested());
++    unsetenv("BB_METALFX_INTERPOLATE");
+     std::remove(path);
+     std::puts("Upscaler support: saved choices, FSR 3.1 and MetalFX fallbacks PASS");
+ }
