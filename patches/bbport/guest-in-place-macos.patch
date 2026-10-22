@@ -1,0 +1,677 @@
+diff --git a/gpu/CMakeLists.txt b/gpu/CMakeLists.txt
+index 0239376..95fa3e5 100644
+--- a/gpu/CMakeLists.txt
++++ b/gpu/CMakeLists.txt
+@@ -204,6 +204,19 @@ target_compile_options(camera-motion-test PRIVATE -UNDEBUG -fPIC)
+ target_link_libraries(camera-motion-test PRIVATE bbgpu)
+ add_dependencies(camera-motion-test host_shaders)
+ 
++# bbport (macOS): guest memory in place through host-pointer import (BbGuestMemory). Run with
++# BB_VULKAN_LIBRARY, VK_DRIVER_FILES and DYLD_LIBRARY_PATH set for the x86-64 KosmicKrisp.
++if (APPLE)
++    add_executable(guest-memory-test EXCLUDE_FROM_ALL ../tests/test_guest_memory_mac.cpp ../tests/test_gpu_runtime_stubs.cpp)
++    target_include_directories(guest-memory-test PRIVATE shim shadps4 third_party/gcn/include)
++    target_compile_options(guest-memory-test PRIVATE -UNDEBUG -fPIC)
++    set_source_files_properties(../tests/test_guest_memory_mac.cpp PROPERTIES
++        COMPILE_OPTIONS "-fvisibility=hidden;-fvisibility-inlines-hidden")
++    # The runtime stubs resolve bbgpu's undefined runtime_* symbols at load (as bb-probe's do).
++    target_link_options(guest-memory-test PRIVATE -Wl,-export_dynamic)
++    target_link_libraries(guest-memory-test PRIVATE bbgpu)
++endif()
++
+ # bbport: FSR 4 benchmark outside the game (tools/fsr4_bench.cpp): ninja -C out/gpu fsr4-bench.
+ add_executable(upscaler-support-test EXCLUDE_FROM_ALL ../tests/test_upscaler_support.cpp
+     shim/bbport_settings.cpp)
+diff --git a/gpu/shadps4/video_core/buffer_cache/buffer.cpp b/gpu/shadps4/video_core/buffer_cache/buffer.cpp
+index 221a063..a250343 100644
+--- a/gpu/shadps4/video_core/buffer_cache/buffer.cpp
++++ b/gpu/shadps4/video_core/buffer_cache/buffer.cpp
+@@ -107,10 +107,14 @@ void UniqueBuffer::Create(vk::BufferCreateInfo& buffer_ci, MemoryType mem_type,
+     } else {
+         buffer_ci.flags |=
+             vk::BufferCreateFlagBits::eSparseBinding | vk::BufferCreateFlagBits::eSparseResidency;
+-        // Bound to exported guest memory chunks (BB_GUEST_IN_PLACE) as well as VRAM blocks.
+-        const vk::ExternalMemoryBufferCreateInfo external{
+-            .handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eDmaBufEXT,
+-        };
++        // Bound to guest memory chunks (BB_GUEST_IN_PLACE) as well as VRAM blocks: dma-bufs the
++        // runtime maps on Linux, the runtime's own pages imported on macOS (BbGuestMemory).
++#ifdef __APPLE__
++        constexpr auto guest_handle = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT;
++#else
++        constexpr auto guest_handle = vk::ExternalMemoryHandleTypeFlagBits::eDmaBufEXT;
++#endif
++        const vk::ExternalMemoryBufferCreateInfo external{.handleTypes = guest_handle};
+         if (GuestInPlace()) {
+             buffer_ci.pNext = &external;
+             if (const auto [result, created] = device.createBuffer(buffer_ci);
+diff --git a/gpu/shadps4/video_core/buffer_cache/buffer_cache.cpp b/gpu/shadps4/video_core/buffer_cache/buffer_cache.cpp
+index 35c0dc6..8c0ea78 100644
+--- a/gpu/shadps4/video_core/buffer_cache/buffer_cache.cpp
++++ b/gpu/shadps4/video_core/buffer_cache/buffer_cache.cpp
+@@ -484,9 +484,10 @@ BufferCache::BufferCache(const Vulkan::Instance& instance_, Vulkan::Scheduler& s
+       gds_buffer{instance, 0, GDS_BUFFER_SIZE, MemoryType::Stream, "GDS Buffer"},
+       memory_semaphore{instance} {
+     integrated_gpu = instance.IsIntegrated();
+-    // bbport: the PC memory model needs the game's direct memory in dma-buf chunks the runtime can
+-    // map at any offset (BbGuestMemory::Usable), and an AMD GPU for now (PcModelGpu). Without
+-    // them it is off, as BB_GUEST_IN_PLACE=0.
++    // bbport: the PC memory model needs the game's direct memory in chunks the GPU reads in place
++    // (BbGuestMemory::Usable: dma-bufs the runtime maps on Linux, the runtime's pages imported on
++    // macOS), and a tested GPU (PcModelGpu: AMD on Linux, Apple silicon). Without them it is off,
++    // as BB_GUEST_IN_PLACE=0.
+     if (GuestInPlace() &&
+         (!BbGuestMemory::PcModelGpu(instance) || !BbGuestMemory::Usable(instance))) {
+         DisableGuestInPlace();
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
+index 21a2260..700f5a7 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp
+@@ -6,6 +6,7 @@
+ #include "video_core/amdgpu/pixel_format.h"
+ #include "video_core/renderer_vulkan/liverpool_to_vk.h"
+ 
++#include <atomic>
+ #include <magic_enum/magic_enum.hpp>
+ 
+ #define INVALID_NUMBER_FORMAT_COMBO                                                                \
+@@ -793,6 +794,29 @@ vk::Format SurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat nu
+     return result;
+ }
+ 
++vk::Format VertexFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format) {
++    const vk::Format result = TrySurfaceFormat(data_format, num_format);
++    if (result != vk::Format::eUndefined || data_format == AmdGpu::DataFormat::FormatInvalid) {
++        return result;
++    }
++    static std::atomic<u64> count{0};
++    const u64 n = count.fetch_add(1, std::memory_order_relaxed) + 1;
++    if (n <= 8 || (n & (n - 1)) == 0) {
++        LOG_WARNING(Render_Vulkan,
++                    "Unknown vertex data_format={} and num_format={}, using a 32-bit stand-in "
++                    "({} so far)",
++                    static_cast<u32>(data_format), static_cast<u32>(num_format), n);
++    }
++    switch (AmdGpu::GetNumberClass(num_format)) {
++    case AmdGpu::NumberClass::Sint:
++        return vk::Format::eR32Sint;
++    case AmdGpu::NumberClass::Uint:
++        return vk::Format::eR32Uint;
++    default:
++        return vk::Format::eR32Sfloat;
++    }
++}
++
+ static constexpr DepthFormatInfo CreateDepthFormatInfo(
+     const DepthBuffer::ZFormat z_format, const DepthBuffer::StencilFormat stencil_format,
+     const vk::Format vk_format) {
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
+index 848a061..fd5d256 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/liverpool_to_vk.h
+@@ -67,6 +67,11 @@ vk::Format SurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat nu
+ /// readers such as the draw-preparation workers.
+ vk::Format TrySurfaceFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format);
+ 
++/// bbport: SurfaceFormat for vertex attributes. A V# the guest is still writing can carry an
++/// unknown pair (seen: 15/5 and 6/0); a 32-bit format of the same number class stands in, so one
++/// draw reads junk instead of the process stopping.
++vk::Format VertexFormat(AmdGpu::DataFormat data_format, AmdGpu::NumberFormat num_format);
++
+ struct DepthFormatInfo {
+     AmdGpu::DepthBuffer::ZFormat z_format;
+     AmdGpu::DepthBuffer::StencilFormat stencil_format;
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+index 3d810f8..31c81b9 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+@@ -456,7 +456,7 @@ void GraphicsPipeline::GetVertexInputs(
+         attributes.push_back(Attribute{
+             .location = attrib.semantic,
+             .binding = attrib.semantic,
+-            .format = LiverpoolToVK::SurfaceFormat(buffer.GetDataFmt(), buffer.GetNumberFmt()),
++            .format = LiverpoolToVK::VertexFormat(buffer.GetDataFmt(), buffer.GetNumberFmt()),
+             .offset = 0,
+         });
+         bindings.push_back(Binding{
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_instance.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_instance.cpp
+index 4be106c..612f09c 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_instance.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_instance.cpp
+@@ -412,6 +412,9 @@ bool Instance::CreateDevice() {
+     // bbport: MetalFX upscaler (vk_metalfx): KosmicKrisp exports memory as MTLHeaps. The name
+     // macro lives in vulkan_metal.h, outside this file's platform defines.
+     external_memory_metal = add_extension("VK_EXT_external_memory_metal");
++    // bbport: guest memory in place (BbGuestMemory, macOS): the runtime's backing view imported
++    // as device memory on unified memory.
++    external_memory_host = add_extension(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
+     // bbport: MetalFX without CPU waits: the MTLSharedEvents of timeline semaphores (this port's
+     // KosmicKrisp patch 0002; an unpatched driver lacks it and MetalFX stays synchronous).
+     metal_objects = add_extension("VK_EXT_metal_objects");
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_instance.h b/gpu/shadps4/video_core/renderer_vulkan/vk_instance.h
+index e32e252..d8c953c 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_instance.h
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_instance.h
+@@ -102,6 +102,10 @@ public:
+     bool IsGuestMemoryExportSupported() const {
+         return guest_memory_export;
+     }
++    /// bbport: host memory can be imported as device memory (guest memory in place on macOS).
++    bool IsHostImportSupported() const {
++        return external_memory_host;
++    }
+ 
+     TracyVkCtx GetProfilerContext() const {
+         return profiler_context;
+@@ -610,6 +614,7 @@ private:
+     bool compute_shader_derivatives{};
+     bool mixed_float_dot_product{}; // bbport: VK_VALVE_shader_mixed_float_dot_product (FSR 4.1.1)
+     bool external_memory_metal{};   // bbport: VK_EXT_external_memory_metal (MetalFX, macOS)
++    bool external_memory_host{};    // bbport: VK_EXT_external_memory_host (guest memory in place, macOS)
+     bool metal_objects{};           // bbport: VK_EXT_metal_objects (MetalFX events, macOS)
+     bool cooperative_matrix{};      // bbport: VK_KHR_cooperative_matrix (FSR 4.1.1 FP8 variant)
+     bool shader_float8{};           // bbport: VK_EXT_shader_float8 with FP8 matrices (RDNA4)
+diff --git a/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp b/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+index 776311e..62d8b05 100644
+--- a/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
++++ b/gpu/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+@@ -782,7 +782,7 @@ bool PipelineCache::RefreshGraphicsStages(PipelineSelection& sel) {
+                        "Vertex attribute binding count exceeded limit: {} >= {}", vertex_binding,
+                        MaxVertexBufferCount);
+             key.vertex_buffer_formats[vertex_binding++] =
+-                Vulkan::LiverpoolToVK::SurfaceFormat(buffer.GetDataFmt(), buffer.GetNumberFmt());
++                Vulkan::LiverpoolToVK::VertexFormat(buffer.GetDataFmt(), buffer.GetNumberFmt());
+         }
+     }
+ 
+diff --git a/gpu/shim/bbport_guest_memory.cpp b/gpu/shim/bbport_guest_memory.cpp
+index 1a60123..31a5960 100644
+--- a/gpu/shim/bbport_guest_memory.cpp
++++ b/gpu/shim/bbport_guest_memory.cpp
+@@ -11,18 +11,316 @@
+ #include "video_core/renderer_vulkan/vk_instance.h"
+ 
+ #ifdef __APPLE__
+-// bbport (macOS): no dma-buf; guest direct memory stays in the runtime's shared memory object,
+-// and the PC memory model stays off (BufferCache checks Usable).
++// bbport (macOS): no dma-buf. The runtime keeps guest memory in its POSIX shared memory object and
++// the GPU library imports that object's unprotected backing view per chunk
++// (VK_EXT_external_memory_host; unified memory), so the arena binds the game's pages themselves
++// (BB_GUEST_IN_PLACE). The runtime's mapping at the guest addresses stays as it is: AllocChunk
++// returns -1 ("the chunk stays in the pool") after the import, and Find() tells the caches.
++#include <algorithm>
++#include <string>
++
++extern "C" void runtime_memory_set_guest_chunk_allocator(int (*alloc)(uint64_t phys,
++                                                                      uint64_t size));
++extern "C" void runtime_memory_set_guest_chunk_whole(int whole);
++extern "C" unsigned char* runtime_memory_backing_view(void);
++
+ namespace BbGuestMemory {
+-bool PcModelGpu(const Vulkan::Instance&) {
+-    return false;
++namespace {
++using u64 = std::uint64_t;
++constexpr std::size_t MaxChunks = 256;
++constexpr auto HandleType = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT;
++
++const Vulkan::Instance* installed = nullptr;
++std::mutex mutex;
++std::array<Chunk*, MaxChunks> chunks{}; // sorted by phys
++std::size_t chunk_count = 0;
++std::atomic<u64> chunk_bytes{0};
++
++u64 ImportAlignment(const Vulkan::Instance& instance) {
++    static const u64 alignment = [&] {
++        const auto chain =
++            instance.GetPhysicalDevice()
++                .getProperties2<vk::PhysicalDeviceProperties2,
++                                vk::PhysicalDeviceExternalMemoryHostPropertiesEXT>();
++        return std::max<u64>(chain.get<vk::PhysicalDeviceExternalMemoryHostPropertiesEXT>()
++                                 .minImportedHostPointerAlignment,
++                             4096);
++    }();
++    return alignment;
++}
++
++std::uint32_t FindType(const Vulkan::Instance& instance, std::uint32_t bits,
++                       vk::MemoryPropertyFlags want) {
++    const auto props = instance.GetPhysicalDevice().getMemoryProperties();
++    for (std::uint32_t i = 0; i < props.memoryTypeCount; ++i) {
++        if ((bits & (1u << i)) && (props.memoryTypes[i].propertyFlags & want) == want) {
++            return i;
++        }
++    }
++    return ~0u;
++}
++
++/// [pointer, pointer + size) as a Vulkan buffer over the memory itself; `buffer` and `memory`
++/// stay null on failure, with `error` set.
++bool Import(const Vulkan::Instance& instance, void* pointer, u64 size, vk::Buffer& buffer,
++            vk::DeviceMemory& memory, std::string& error) {
++    buffer = nullptr;
++    memory = nullptr;
++    const vk::Device device = instance.GetDevice();
++    const u64 alignment = ImportAlignment(instance);
++    if (reinterpret_cast<std::uintptr_t>(pointer) % alignment != 0 || size == 0 ||
++        size % alignment != 0) {
++        error = "pointer or size not aligned to " + std::to_string(alignment);
++        return false;
++    }
++    const vk::ExternalMemoryBufferCreateInfo external{.handleTypes = HandleType};
++    const auto [buffer_result, created] = device.createBuffer({
++        .pNext = &external,
++        .size = size,
++        .usage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
++                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eUniformBuffer |
++                 vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer |
++                 vk::BufferUsageFlagBits::eIndirectBuffer,
++        .sharingMode = vk::SharingMode::eExclusive,
++    });
++    if (buffer_result != vk::Result::eSuccess) {
++        error = "buffer creation: " + vk::to_string(buffer_result);
++        return false;
++    }
++    const auto requirements = device.getBufferMemoryRequirements(created);
++    const auto [props_result, props] = device.getMemoryHostPointerPropertiesEXT(HandleType, pointer);
++    const std::uint32_t type =
++        props_result == vk::Result::eSuccess
++            ? FindType(instance, requirements.memoryTypeBits & props.memoryTypeBits,
++                       vk::MemoryPropertyFlagBits::eHostVisible)
++            : ~0u;
++    if (type == ~0u || requirements.size > size) {
++        device.destroyBuffer(created);
++        error = type == ~0u ? "no host-visible memory type takes the pointer (" +
++                                  vk::to_string(props_result) + ")"
++                            : "the buffer needs " + std::to_string(requirements.size) + " bytes";
++        return false;
++    }
++    const vk::ImportMemoryHostPointerInfoEXT import{.handleType = HandleType,
++                                                    .pHostPointer = pointer};
++    const auto [memory_result, allocated] = device.allocateMemory(
++        {.pNext = &import, .allocationSize = size, .memoryTypeIndex = type});
++    if (memory_result != vk::Result::eSuccess) {
++        device.destroyBuffer(created);
++        error = "import: " + vk::to_string(memory_result);
++        return false;
++    }
++    if (const auto result = device.bindBufferMemory(created, allocated, 0);
++        result != vk::Result::eSuccess) {
++        device.freeMemory(allocated);
++        device.destroyBuffer(created);
++        error = "binding: " + vk::to_string(result);
++        return false;
++    }
++    buffer = created;
++    memory = allocated;
++    return true;
+ }
+-bool Usable(const Vulkan::Instance&) {
+-    return false;
++
++/// The runtime's chunk allocator: a chunk of direct memory the game is about to map.
++int AllocChunk(u64 phys, u64 size) {
++    unsigned char* backing = runtime_memory_backing_view();
++    std::string error = backing ? "" : "the runtime has no backing view yet";
++    if (backing && HostImport::AddChunk(*installed, phys, backing + phys, size, error)) {
++        std::printf("Guest memory: direct memory %#llx+%llu MiB imported in place (host pointer), "
++                    "%llu MiB so far\n",
++                    (unsigned long long)phys, (unsigned long long)(size >> 20),
++                    (unsigned long long)(chunk_bytes.load() >> 20));
++        return -1; // the runtime keeps mapping the chunk from its pool: the same pages
++    }
++    static std::atomic<int> failures{0};
++    if (failures.fetch_add(1) < 4) {
++        std::printf("Guest memory: import of chunk %#llx failed (%s); the GPU copies it\n",
++                    (unsigned long long)phys, error.c_str());
++    }
++    return -1;
+ }
+-void Install(const Vulkan::Instance&) {}
+-const Chunk* Find(std::uint64_t) {
+-    return nullptr;
++} // namespace
++
++namespace HostImport {
++bool AddChunk(const Vulkan::Instance& instance, u64 phys, void* pointer, u64 size,
++              std::string& error) {
++    error.clear();
++    if (const char* fail_at = std::getenv("BB_GUEST_IMPORT_FAIL_AT");
++        fail_at && std::strtoull(fail_at, nullptr, 0) == phys) {
++        error = "forced by BB_GUEST_IMPORT_FAIL_AT";
++        return false;
++    }
++    {
++        std::scoped_lock lk{mutex};
++        if (chunk_count == MaxChunks) {
++            error = "too many chunks";
++            return false;
++        }
++    }
++    vk::Buffer buffer;
++    vk::DeviceMemory memory;
++    if (!Import(instance, pointer, size, buffer, memory, error)) {
++        return false;
++    }
++    std::scoped_lock lk{mutex};
++    std::size_t i = chunk_count++;
++    for (; i > 0 && chunks[i - 1]->phys > phys; --i) {
++        chunks[i] = chunks[i - 1];
++    }
++    static std::uint32_t next_index = 0;
++    chunks[i] = new Chunk{phys, size, buffer, memory, next_index++};
++    chunk_bytes += size;
++    return true;
++}
++
++bool SelfTest(const Vulkan::Instance& instance, std::string& error) {
++    constexpr u64 Size = 2 << 20, Offset = 1 << 20;
++    constexpr std::uint32_t Marker = 0x5ca1ab1e;
++    void* mapping = mmap(nullptr, Size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
++    if (mapping == MAP_FAILED) {
++        error = "mmap failed";
++        return false;
++    }
++    const vk::Device device = instance.GetDevice();
++    vk::Buffer imported, readback;
++    vk::DeviceMemory imported_memory, readback_memory;
++    vk::CommandPool pool;
++    const auto finish = [&](bool ok) {
++        if (pool) device.destroyCommandPool(pool);
++        if (readback) device.destroyBuffer(readback);
++        if (readback_memory) device.freeMemory(readback_memory);
++        if (imported) device.destroyBuffer(imported);
++        if (imported_memory) device.freeMemory(imported_memory);
++        munmap(mapping, Size);
++        return ok;
++    };
++    if (!Import(instance, mapping, Size, imported, imported_memory, error)) {
++        return finish(false);
++    }
++    static_cast<volatile std::uint32_t*>(mapping)[Offset / 4] = Marker; // through the CPU mapping
++    if (const auto [result, buffer] = device.createBuffer(
++            {.size = 4096, .usage = vk::BufferUsageFlagBits::eTransferDst,
++             .sharingMode = vk::SharingMode::eExclusive});
++        result == vk::Result::eSuccess) {
++        readback = buffer;
++    } else {
++        error = "readback buffer: " + vk::to_string(result);
++        return finish(false);
++    }
++    const auto requirements = device.getBufferMemoryRequirements(readback);
++    const std::uint32_t type =
++        FindType(instance, requirements.memoryTypeBits,
++                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
++    if (type == ~0u) {
++        error = "no host-visible readback memory";
++        return finish(false);
++    }
++    if (const auto [result, memory] = device.allocateMemory(
++            {.allocationSize = requirements.size, .memoryTypeIndex = type});
++        result == vk::Result::eSuccess) {
++        readback_memory = memory;
++    } else {
++        error = "readback memory: " + vk::to_string(result);
++        return finish(false);
++    }
++    if (device.bindBufferMemory(readback, readback_memory, 0) != vk::Result::eSuccess) {
++        error = "readback binding";
++        return finish(false);
++    }
++    if (const auto [result, created] = device.createCommandPool(
++            {.flags = vk::CommandPoolCreateFlagBits::eTransient,
++             .queueFamilyIndex = instance.GetGraphicsQueueFamilyIndex()});
++        result == vk::Result::eSuccess) {
++        pool = created;
++    } else {
++        error = "command pool: " + vk::to_string(result);
++        return finish(false);
++    }
++    const auto [alloc_result, buffers] = device.allocateCommandBuffers(
++        {.commandPool = pool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1});
++    if (alloc_result != vk::Result::eSuccess) {
++        error = "command buffer: " + vk::to_string(alloc_result);
++        return finish(false);
++    }
++    const vk::CommandBuffer cmd = buffers[0];
++    static_cast<void>(cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit}));
++    cmd.copyBuffer(imported, readback, vk::BufferCopy{.srcOffset = Offset, .dstOffset = 0, .size = 4096});
++    static_cast<void>(cmd.end());
++    const vk::Queue queue = instance.GetGraphicsQueue();
++    const vk::SubmitInfo submit{.commandBufferCount = 1, .pCommandBuffers = &cmd};
++    if (queue.submit(submit) != vk::Result::eSuccess) {
++        error = "submit";
++        return finish(false);
++    }
++    static_cast<void>(queue.waitIdle());
++    const auto [map_result, data] = device.mapMemory(readback_memory, 0, 4096);
++    const bool seen =
++        map_result == vk::Result::eSuccess && *static_cast<const std::uint32_t*>(data) == Marker;
++    if (map_result == vk::Result::eSuccess) {
++        device.unmapMemory(readback_memory);
++    }
++    if (!seen) {
++        error = "the GPU did not see the CPU write";
++    }
++    return finish(seen);
++}
++} // namespace HostImport
++
++bool PcModelGpu(const Vulkan::Instance& instance) {
++    return Usable(instance); // unified memory: the point of the model here
++}
++
++bool Usable(const Vulkan::Instance& instance) {
++    static const bool usable = [&] {
++        if (!instance.IsHostImportSupported()) {
++            std::printf("Guest memory: the driver cannot import host memory "
++                        "(VK_EXT_external_memory_host)\n");
++            return false;
++        }
++        std::string error;
++        if (!HostImport::SelfTest(instance, error)) {
++            std::printf("Guest memory: host memory import self-test failed (%s)\n", error.c_str());
++            return false;
++        }
++        return true;
++    }();
++    return usable;
++}
++
++void Install(const Vulkan::Instance& instance) {
++    const char* env = std::getenv("BB_GUEST_GPU_MEMORY");
++    const char* in_place = std::getenv("BB_GUEST_IN_PLACE");
++    if (!(env && env[0] == '1') && !(in_place && in_place[0] == '1')) {
++        return;
++    }
++    if (!Usable(instance)) {
++        std::printf("Guest memory: direct memory stays in the pool; the GPU copies it\n");
++        return;
++    }
++    installed = &instance;
++    runtime_memory_set_guest_chunk_whole(0);
++    runtime_memory_set_guest_chunk_allocator(&AllocChunk);
++    std::printf("Guest memory: direct memory chunks are imported in place (host pointer)\n");
++}
++
++const Chunk* Find(std::uint64_t phys) {
++    std::scoped_lock lk{mutex};
++    // The last chunk starting at or below phys.
++    std::size_t lo = 0, hi = chunk_count;
++    while (lo < hi) {
++        const std::size_t mid = (lo + hi) / 2;
++        if (chunks[mid]->phys <= phys) {
++            lo = mid + 1;
++        } else {
++            hi = mid;
++        }
++    }
++    if (lo == 0) {
++        return nullptr;
++    }
++    const Chunk* c = chunks[lo - 1];
++    return phys < c->phys + c->size ? c : nullptr;
+ }
+ } // namespace BbGuestMemory
+ #else
+diff --git a/gpu/shim/bbport_guest_memory.h b/gpu/shim/bbport_guest_memory.h
+index e67a5f3..10a29cf 100644
+--- a/gpu/shim/bbport_guest_memory.h
++++ b/gpu/shim/bbport_guest_memory.h
+@@ -9,6 +9,7 @@
+ #pragma once
+ 
+ #include <cstdint>
++#include <string>
+ #include "video_core/renderer_vulkan/vk_common.h"
+ 
+ namespace Vulkan {
+@@ -38,4 +39,17 @@ bool PcModelGpu(const Vulkan::Instance& instance);
+ void Install(const Vulkan::Instance& instance);
+ /// The chunk holding direct memory address `phys`, or null.
+ const Chunk* Find(std::uint64_t phys);
++
++/// macOS: the runtime's backing view imported per chunk (VK_EXT_external_memory_host) instead of
++/// dma-bufs; the runtime's mapping at the guest addresses stays, the GPU binds the same pages.
++namespace HostImport {
++/// Imports [pointer, pointer + size), direct memory from `phys`, as a chunk the GPU reads in place
++/// and registers it for Find(). False with `error` set when pointer or size is not aligned to the
++/// driver's import alignment, the driver refuses, or BB_GUEST_IMPORT_FAIL_AT=<hex phys> names the
++/// chunk (tests).
++bool AddChunk(const Vulkan::Instance& instance, std::uint64_t phys, void* pointer,
++              std::uint64_t size, std::string& error);
++/// Imports 2 MiB of fresh memory, writes through the CPU mapping, reads it back on the GPU.
++bool SelfTest(const Vulkan::Instance& instance, std::string& error);
++} // namespace HostImport
+ } // namespace BbGuestMemory
+diff --git a/gpu/shim/bbport_overlay.cpp b/gpu/shim/bbport_overlay.cpp
+index 3763057..41dccf5 100644
+--- a/gpu/shim/bbport_overlay.cpp
++++ b/gpu/shim/bbport_overlay.cpp
+@@ -593,11 +593,19 @@ void FpsCounter() {
+     ImGui::SetNextWindowPos(
+         ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - pad, viewport->WorkPos.y + pad),
+         ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+-    ImGui::SetNextWindowBgAlpha(0.5f);
++    // bbport (CSR): BB_FPS_SCALE=N draws the counter N times larger on a darker panel, so it
++    // stays readable in recordings and streams.
++    static const float fps_scale = [] {
++        const char* env = std::getenv("BB_FPS_SCALE");
++        const float v = env ? float(std::atof(env)) : 1.0f;
++        return v >= 1.0f && v <= 6.0f ? v : 1.0f;
++    }();
++    ImGui::SetNextWindowBgAlpha(fps_scale > 1.0f ? 0.75f : 0.5f);
+     ImGui::Begin("##fps", nullptr,
+                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                      ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav |
+                      ImGuiWindowFlags_NoFocusOnAppearing);
++    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * fps_scale);
+     const auto& s = BbSettings::Get();
+     ImGui::Text(BbSettings::MenuText("%.0f FPS  %.1f ms  %s", "%.0f FPS  %.1f мс  %s"),
+                 frame_ms_avg > 0.0f ? 1000.0f / frame_ms_avg : 0.0f, frame_ms_avg,
+@@ -607,6 +615,7 @@ void FpsCounter() {
+                 : s.upscaler == BbSettings::UpscalerTaa    ? "TAA"
+                 : s.upscaler == BbSettings::UpscalerMetalFx ? "MetalFX"
+                                                            : "");
++    ImGui::PopFont();
+     ImGui::End();
+ }
+ 
+diff --git a/gpu/third_party/fsr-vulkan b/gpu/third_party/fsr-vulkan
+--- a/gpu/third_party/fsr-vulkan
++++ b/gpu/third_party/fsr-vulkan
+@@ -1 +1 @@
+-Subproject commit c64f093404125e960813f95f1996c14780f0dd69
++Subproject commit c64f093404125e960813f95f1996c14780f0dd69-dirty
+diff --git a/src/runtime.h b/src/runtime.h
+index 93f0343..5e13f00 100644
+--- a/src/runtime.h
++++ b/src/runtime.h
+@@ -22,6 +22,9 @@ void runtime_mutex_report(void);
+ uintptr_t runtime_memory_resolve(const char *name);
+ void runtime_memory_report(void);
+ int runtime_memory_is_mapped(uintptr_t address, uint64_t size);
++/* bbport (macOS): the pool's unprotected backing view, for the GPU library to import guest memory
++ * in place (BB_GUEST_IN_PLACE); NULL before the pool exists. */
++unsigned char *runtime_memory_backing_view(void);
+ /* The CPU is about to write the range outside guest code (a file read): tells the GPU side. */
+ void runtime_memory_note_write(uintptr_t address, uint64_t size);
+ void runtime_memory_note_cpu_write(uintptr_t address, uint64_t size);
+diff --git a/src/runtime_memory.c b/src/runtime_memory.c
+index 32eacb4..f718eea 100644
+--- a/src/runtime_memory.c
++++ b/src/runtime_memory.c
+@@ -151,6 +151,7 @@ static int pool(void) {
+     for (uint64_t c=0;c<=POOL_SIZE/CHUNK;++c) chunk_fds[c]=-1;
+     return 0;
+ }
++unsigned char *runtime_memory_backing_view(void) { return backing_base; }
+ /* Size of direct memory chunk c (the last one may be shorter). */
+ static uint64_t chunk_size(uint64_t c) {
+     const uint64_t start=c*CHUNK;
+diff --git a/tests/test_gpu_runtime_stubs.cpp b/tests/test_gpu_runtime_stubs.cpp
+index 482738a..a8a1894 100644
+--- a/tests/test_gpu_runtime_stubs.cpp
++++ b/tests/test_gpu_runtime_stubs.cpp
+@@ -6,7 +6,9 @@
+ #include <setjmp.h>
+ // Renderer tests have no guest process. Clock/host-thread services work; guest accesses abort.
+ extern "C" {
+-thread_local sigjmp_buf* runtime_fault_recover = nullptr;
++// GNU __thread, not C++ thread_local: no TLS wrapper, so the symbol stays exported for the GPU
++// library to resolve at load on macOS (as the C runtime's is).
++__thread sigjmp_buf* runtime_fault_recover = nullptr;
+ uint32_t runtime_disabled_optimizations = 0;
+ uint64_t runtime_experiment_bits = 0;
+ uint64_t runtime_tsc_frequency() { return 1000000000; }
+@@ -30,6 +32,7 @@ void runtime_memory_set_cpu_write_hook(void (*)(uintptr_t, uint64_t)) {}
+ void runtime_memory_set_write_watch(uintptr_t, uint64_t, int) { std::abort(); }
+ void runtime_memory_set_guest_chunk_allocator(int (*)(uint64_t, uint64_t)) {}
+ void runtime_memory_set_guest_chunk_whole(int) {}
++unsigned char* runtime_memory_backing_view() { return nullptr; }
+ int runtime_memory_vma_info(uintptr_t, int*, int*, uintptr_t*) { std::abort(); }
+ int runtime_memory_direct_phys(uintptr_t, uint64_t*, uintptr_t*) { std::abort(); }
+ void runtime_wait_report(double) {}
+diff --git a/tests/test_guest_memory_mac.cpp b/tests/test_guest_memory_mac.cpp
+new file mode 100644
+index 0000000..ff72e24
+--- /dev/null
++++ b/tests/test_guest_memory_mac.cpp
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Guest memory in place on macOS: the runtime's backing view imported per chunk with
++// VK_EXT_external_memory_host, found again by physical address, and refused on request.
++#include <cassert>
++#include <cstdio>
++#include <cstdlib>
++#include <string>
++#include <sys/mman.h>
++#include "bbport_guest_memory.h"
++#include "video_core/renderer_vulkan/vk_instance.h"
++
++int main() {
++    using namespace Vulkan;
++    Instance instance(0, false);
++    assert(instance.IsHostImportSupported());
++    assert(BbGuestMemory::Usable(instance));
++    assert(BbGuestMemory::PcModelGpu(instance));
++    constexpr std::uint64_t chunk = 1 << 20;
++    void* backing = mmap(nullptr, 2 * chunk, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
++    assert(backing != MAP_FAILED);
++    auto* bytes = static_cast<unsigned char*>(backing);
++    std::string error;
++    assert(BbGuestMemory::HostImport::AddChunk(instance, 0, bytes, chunk, error) && error.empty());
++    setenv("BB_GUEST_IMPORT_FAIL_AT", "0x100000", 1);
++    assert(!BbGuestMemory::HostImport::AddChunk(instance, chunk, bytes + chunk, chunk, error));
++    assert(error.find("BB_GUEST_IMPORT_FAIL_AT") != std::string::npos);
++    unsetenv("BB_GUEST_IMPORT_FAIL_AT");
++    assert(BbGuestMemory::Find(0) && BbGuestMemory::Find(chunk - 1) && !BbGuestMemory::Find(chunk));
++    assert(BbGuestMemory::HostImport::AddChunk(instance, chunk, bytes + chunk, chunk, error));
++    const BbGuestMemory::Chunk* second = BbGuestMemory::Find(chunk);
++    assert(second && second->phys == chunk && second->size == chunk && second->memory && second->buffer);
++    assert(BbGuestMemory::Find(0)->index == 0 && second->index == 1);
++    // Unaligned size: refused, not imported.
++    assert(!BbGuestMemory::HostImport::AddChunk(instance, 2 * chunk, bytes, chunk + 1, error));
++    assert(error.find("aligned") != std::string::npos);
++    std::puts("guest-memory-test: OK");
++}
