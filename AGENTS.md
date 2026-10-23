@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Agent Guide
-Version:     v3.0.1
+Version:     v3.0.2
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-21
-SHA256:      728a099eac2906911a79d317d95d0cba6453cb244e7a7fb8bcb06482ede80eff
+Date:        2026-10-22
+SHA256:      eccdff800c97b6b25d7f182b862d90852ab6343a0c5f4dcb246b5905963d5035
 Chain:       solana-mainnet
-Tx:          2UUnMx7GsGCy1DSVDu3d2KoM6ygbHXmbw1ieZsca2jqTUCtEU5SSNf1nJzPcJrQDi14Rs9L2NPsPHSh8wqCDFcrw
+Tx:          58w4eFS7qGFy3U6wt2uaSaqLqncJSUerFo5SsFbfi4gECVgGeikXLqy6UmZCHxsKKCs5qNo1e35cidjpPxEpm9nB
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -75,9 +75,10 @@ bbport results and their limits; 90+ FPS gameplay is still a goal.
 
 ## Completion note
 
-2026-10-21: I made the launcher and public guides bbport-only, removed the old
-standalone tools, and kept the CSR sources. All 19 tests, the name self-check,
-installed-file check, and secret scans pass; no new gameplay benchmark was run.
+2026-10-22: I committed the first DS3 Metal settings in f9cbeae: optional
+`--metalfx` Native AA and `--tuned`, a local Mesa cache, and shell isolation.
+All 22 launcher/mod tests pass. See docs/METAL.md for the shared implementation
+and remaining engine experiments; I did not run a new gameplay benchmark.
 
 <!-- graft:start -->
 ## Graft — repo context graph
