@@ -1,12 +1,12 @@
 ```text
 Document:    My Bloodborne Mac Performance Notes
-Version:     v3.0.0
+Version:     v3.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-21
-SHA256:      c05bbdbf931df0bc6c3d1950e2920f4f6f13fca4cf42923951f663d64dd39d68
+Date:        2026-10-22
+SHA256:      750278d3b417752b1e980f637f2e24062e6cbe400a3b7b34983e55257df3c2ea
 Chain:       solana-mainnet
-Tx:          2NWToGYERDJMnhS6tXseuSCSa2ASn62VcPuQFxKPcmMBokAHh6QKhoardh8pmXaeEnBKs6iTWFkm3PTa3y8Acjjt
+Tx:          25ePzE9CCrJxHjNzoRncNzh4vMyRziAWGA2kEYF7QLQkRTRN1WBYPRj7p1TkJa6TBwNkmeZAfJr6fUrxNtGDHRbK
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -52,3 +52,17 @@ experimental patches are no longer part of the supported setup.
 
 The October 21 launcher and mod checks ran locally. No new performance run
 was done for that release, and I am not claiming a new FPS gain.
+
+## DS3 Metal settings — October 22, 2026
+
+I added optional `--metalfx` Native AA and `--tuned` launcher settings from my
+DS3 work, plus a Mesa shader cache under this repo's ignored runtime folder.
+The [Metal comparison](docs/METAL.md) records the engine path, exact settings,
+and the limits of the earlier DS3 experiments. I checked the launcher with
+temporary fixtures; I did not run Bloodborne or measure a new FPS result.
+
+Before comparing these settings, I still need your permission for a short
+matched play test with copied saves. Use the same scene and warm both caches;
+record controls, sound, game speed, picture quality, save/load, stalls, and
+crashes alongside frame times. The new cache starts cold. Guest memory in
+place and frame interpolation remain outside the launcher's supported flags.

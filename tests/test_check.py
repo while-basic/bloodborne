@@ -30,6 +30,8 @@ class LauncherTests(unittest.TestCase):
         play.GAME_MERGED.mkdir()
         (play.GAME_MERGED / "eboot.bin").write_text("game")
         (self.root / "original-save").write_bytes(b"keep me")
+        play.BBPORT_DATA.mkdir()
+        (play.BBPORT_DATA / "bbport.ini").write_text("upscaler=taa\npreset=2\nunknown=keep\n")
 
     def snapshot(self):
         return {str(p.relative_to(self.root)): p.read_bytes()
@@ -50,6 +52,8 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(result["fps_target"], 60)
         self.assertEqual(result["resolution"], "1080p")
         self.assertEqual(result["perf_level"], 3)
+        self.assertNotIn("BB_UPSCALER", result["runtime_env"])
+        self.assertNotIn("BB_VBLANK_HZ", result["runtime_env"])
         self.assertEqual(before, self.snapshot())
         run.assert_not_called()
         launch.assert_not_called()
@@ -112,6 +116,82 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(env["BB_FPS_SCALE"], "1")
         self.assertEqual(env["BB_FULLSCREEN"], "0")
         self.assertEqual(before, self.snapshot())
+
+    def test_metal_profiles_check_and_launch_match_without_changing_saved_settings(self):
+        for options in ([], ["--tuned"], ["--metalfx"], ["--tuned", "--metalfx"]):
+            with self.subTest(options=options):
+                before, output = self.snapshot(), io.StringIO()
+                directories = {p for p in self.root.rglob("*") if p.is_dir()}
+                with patch("sys.argv", ["play.py", *options, "--check"]), \
+                        patch.object(play.subprocess, "run") as run, \
+                        patch.object(play.subprocess, "call") as launch, contextlib.redirect_stdout(output):
+                    self.assertEqual(play.main(), 0)
+                run.assert_not_called()
+                launch.assert_not_called()
+                self.assertEqual(directories, {p for p in self.root.rglob("*") if p.is_dir()})
+                self.assertEqual(before, self.snapshot())
+                report = json.loads(output.getvalue())
+                with patch("sys.argv", ["play.py", *options]), \
+                        patch.object(play.subprocess, "run") as run, \
+                        patch.object(play.subprocess, "call", return_value=0) as launch, \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    run.return_value.returncode = 1
+                    self.assertEqual(play.main(), 0)
+                env = launch.call_args.kwargs["env"]
+                self.assertEqual(report["runtime_env"], {key: env[key] for key in report["runtime_env"]})
+                self.assertEqual(env.get("BB_UPSCALER"),
+                                 "metalfx" if "--metalfx" in options else None)
+                if "--metalfx" in options:
+                    self.assertEqual((env["BB_UPSCALE_PRESET"], env["BB_FSR_SHARPNESS"]), ("0", "0"))
+                if "--tuned" in options:
+                    self.assertEqual((env["BB_VBLANK_HZ"], env["BB_STAGING_KEEP_MB"],
+                                      env["BB_FAULT_WINDOW"], env["BB_RETINA"]), ("0", "2048", "1024", "0"))
+                else:
+                    self.assertFalse({"BB_VBLANK_HZ", "BB_STAGING_KEEP_MB", "BB_FAULT_WINDOW", "BB_RETINA"} & env.keys())
+                self.assertEqual((env["BB_RENDER_RES"], env["BB_OUTPUT_RES"], env["BB_FPS"]),
+                                 ("1920x1080", "1920x1080", "60"))
+                self.assertEqual(env["MESA_SHADER_CACHE_DIR"], str(play.RUNTIME / "cache/mesa"))
+                self.assertEqual(env["MESA_SHADER_CACHE_MAX_SIZE"], "4G")
+                self.assertTrue(Path(env["MESA_SHADER_CACHE_DIR"]).is_dir())
+                self.assertEqual(before, self.snapshot())
+
+    def test_shell_experiments_cannot_redirect_or_change_the_launch(self):
+        stale = {key: "stale" for key in (
+            "BB_CONFIG", "BB_GAME_DIR", "BB_DATA_DIR", "BB_PATCHES", "BB_PROBE", "BB_DEPS",
+            "BB_GUEST_IN_PLACE", "BB_METALFX_INTERPOLATE", "BB_GPU_COMMAND_WRITES", "BB_WRITE_TRACKING",
+            "BB_UPSCALER", "BB_UPSCALE_PRESET", "BB_OBJECT_MOTION", "BB_FRAME_STATS", "BB_FRAME_LOG",
+            "BB_VBLANK_HZ", "BB_STAGING_KEEP_MB", "BB_FAULT_WINDOW", "BB_RETINA",
+            "MESA_SHADER_CACHE_DIR", "MESA_SHADER_CACHE_MAX_SIZE")}
+        with patch.dict(os.environ, {**stale, "PATH": os.environ["PATH"]}, clear=True), \
+                patch("sys.argv", ["play.py"]), patch.object(play.subprocess, "run") as run, \
+                patch.object(play.subprocess, "call", return_value=0) as launch, \
+                contextlib.redirect_stdout(io.StringIO()):
+            run.return_value.returncode = 1
+            self.assertEqual(play.main(), 0)
+            env = launch.call_args.kwargs["env"]
+            self.assertEqual(env["PATH"], os.environ["PATH"])
+            self.assertEqual(os.environ["BB_GUEST_IN_PLACE"], "stale")
+        self.assertEqual(env["BB_CONFIG"], str(play.BBPORT_DATA / "bbport.ini"))
+        self.assertEqual(env["BB_PATCHES"], ";".join(play.bbport_patches(3)))
+        self.assertFalse(set(stale) & {key for key, value in env.items() if value == "stale"})
+        self.assertFalse({"BB_GUEST_IN_PLACE", "BB_METALFX_INTERPOLATE", "BB_PROBE", "BB_DEPS"} & env.keys())
+
+    def test_source_engine_receives_metal_profile_through_real_child_process(self):
+        source = self.root / "source engine"
+        script = source / "tools/macos/run.sh"
+        script.parent.mkdir(parents=True)
+        (source / "out").mkdir()
+        (source / "out/bb-probe").write_text("fixture")
+        script.write_text('printf "%s\\n" "$BB_UPSCALER" "$BB_UPSCALE_PRESET" "$BB_VBLANK_HZ" '
+                          '"$BB_CONFIG" > "$BB_DATA_DIR/received.txt"\nexit 7\n')
+        before = (play.BBPORT_DATA / "bbport.ini").read_bytes()
+        with patch("sys.argv", ["play.py", "--bbport-src", str(source), "--metalfx", "--tuned"]), \
+                patch.object(play.subprocess, "run") as run, contextlib.redirect_stdout(io.StringIO()):
+            run.return_value.returncode = 1
+            self.assertEqual(play.main(), 7)
+        self.assertEqual((play.BBPORT_DATA / "received.txt").read_text().splitlines(),
+                         ["metalfx", "0", "0", str(play.BBPORT_DATA / "bbport.ini")])
+        self.assertEqual((play.BBPORT_DATA / "bbport.ini").read_bytes(), before)
 
     def test_running_game_is_left_alone(self):
         with patch("sys.argv", ["play.py"]), patch.object(play.subprocess, "run") as run, \

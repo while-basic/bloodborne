@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v4.0.0
+Version:     v4.1.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
-Date:        2026-10-21
-SHA256:      12f197c6c4fd0adedf71a41e3887686fb59fbbc6ceb94f5f985de71b5a0ab521
+Date:        2026-10-22
+SHA256:      ebbf71576a73420274188a7f3ccfa3594e030f2d25b6a14fb7d23946a6082d00
 Chain:       solana-mainnet
-Tx:          3sCPmhWyBBruM35QrBqTQzC4U5Biq6xQt6prrmzsyE2AadkduHN6UtRxPNtdRFk3Gk6TzfDxd34fDy1fut4tTrw6
+Tx:          XkyjZU77Ep3bTe24LVtPefyZyiYnH9QBwvKLVKPSLRhWpgBjVjzQRxwrtqSXx7jf4zxSuGNvNmu3NejCNgZzHfe
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -154,6 +154,24 @@ python3 play.py --extra "Disable AA" --check
 python3 play.py --no-log
 python3 play.py --stats
 ```
+
+I also brought over the first launcher settings from my DS3 project:
+
+```sh
+python3 play.py --metalfx --tuned --windowed --check
+python3 play.py --metalfx --tuned --windowed
+```
+
+`--metalfx` requests MetalFX Native AA at your chosen resolution. `--tuned`
+tries DS3's staging buffer, write-fault window, unpaced vblank, and Retina
+settings. Both are optional; I have not measured them in Bloodborne. My usual
+1080p / 60 cap / perf 3 setup stays the default. See the [Metal comparison](docs/METAL.md)
+for the exact settings and what still needs a play check.
+
+The launcher now ignores inherited `BB_*` shell variables. Use its flags and
+your saved bbport settings. I pin Mesa's shader cache to `runtime/cache/mesa`
+with a 4 GB limit; its first run may need to rebuild shaders. Existing caches
+stay in place. `--check` shows the requested environment without writing files.
 
 Resolution choices are 720p, 900p, 1080p, 1440p, and 4K. FPS caps are 60 or 90.
 **A 90 FPS cap does not create 90 FPS.** A faster display is needed to show

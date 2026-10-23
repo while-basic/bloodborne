@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Document:    Bloodborne launcher for bbport on Mac
-# Version:     v2.0.0
+# Version:     v2.1.0
 # Author:      Christopher Celaya
 # Contact:     https://github.com/while-basic
-# Date:        2026-10-21
-# SHA256:      92a866eeb422e51930bec867677994961a9ab0f74db8488a7e5ddabc410fd16b
+# Date:        2026-10-22
+# SHA256:      13d4022aec7a470a106d4f253389aeb95c90f1cd48224b693c6c1650e6d93a58
 # Chain:       solana-mainnet
-# Tx:          66A3bqc9cnBKa3A24GVKKo1LMiWNzKv2mvYCidJ6rAtx4hu6z2XiyG8uamUCQ6M8R4RRMzXC5wSaVNpfeSH6i4d2
+# Tx:          5sy7JzVC81t1LVFq22hxvHMuip3ukgnz2kEDzibMq4RZLYqkkJUioD6qpXWbWJxQdMfHWqUsy3Jq8bqkwftHvogP
 # License:     The Unlicense (public domain dedication)
 """Play my own Bloodborne copy with bbport for Mac.
 
@@ -136,24 +136,39 @@ def launch_bbport(args, parser):
                      "CUSA00900 and CUSA00900-patch under runtime/games/. See README.md.")
     width, height = SIZES[args.resolution]
     patches = bbport_patches(args.perf, args.extra)
+    cache = RUNTIME / "cache/mesa"
+    runtime_env = dict(BB_DATA_DIR=str(BBPORT_DATA), BB_CONFIG=str(BBPORT_DATA / "bbport.ini"),
+                       BB_GAME_DIR=str(GAME_MERGED), BB_FPS=str(args.fps),
+                       BB_OUTPUT_RES=f"{width}x{height}", BB_RENDER_RES=f"{width}x{height}",
+                       BB_PATCHES=";".join(patches), BB_FULLSCREEN="1" if args.fullscreen else "0",
+                       BB_FPS_SCALE=str(args.fps_size), BB_SAVE_LOG="0" if args.no_log else "1",
+                       MESA_SHADER_CACHE_DIR=str(cache), MESA_SHADER_CACHE_MAX_SIZE="4G")
+    if args.tuned:
+        # DS3's measured setup; Bloodborne still needs its own matched play check.
+        runtime_env.update(BB_VBLANK_HZ="0", BB_STAGING_KEEP_MB="2048", BB_FAULT_WINDOW="1024", BB_RETINA="0")
+    if args.metalfx:
+        runtime_env.update(BB_UPSCALER="metalfx", BB_UPSCALE_PRESET="0", BB_FSR_SHARPNESS="0")
     if args.check:
         print(json.dumps({"engine": str(run), "resolution": args.resolution, "fps_target": args.fps,
                           "perf_level": args.perf, "patches": patches, "game": str(GAME_MERGED),
                           "game_ready": game_ready, "merge_needed": not game_ready, "data": str(BBPORT_DATA),
-                          "fullscreen": args.fullscreen, "gameplay_verified": False}, indent=2))
+                          "fullscreen": args.fullscreen, "runtime_env": runtime_env,
+                          "gameplay_verified": False}, indent=2))
         return 0
     if subprocess.run(["pgrep", "-x", "bb-probe"], stdout=subprocess.DEVNULL).returncode == 0:
         parser.error("Close the running game first.")
     merge_game()
     BBPORT_DATA.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, BB_DATA_DIR=str(BBPORT_DATA), BB_GAME_DIR=str(GAME_MERGED), BB_FPS=str(args.fps),
-               BB_OUTPUT_RES=f"{width}x{height}", BB_RENDER_RES=f"{width}x{height}",
-               BB_PATCHES=";".join(patches), BB_FULLSCREEN="1" if args.fullscreen else "0")
-    env["BB_FPS_SCALE"] = str(args.fps_size)  # larger sizes need my optional overlay patch
-    env["BB_SAVE_LOG"] = "0" if args.no_log else "1"
+    cache.mkdir(parents=True, exist_ok=True)
+    # Another game's shell settings must not redirect saves or enable engine experiments.
+    env = {key: value for key, value in os.environ.items() if not key.startswith("BB_")}
+    env.update(runtime_env)
     build = f"own build {args.bbport_src}" if args.bbport_src else BBPORT_VERSION
     print(f"Launching bbport {build}: {args.resolution}, target {args.fps} FPS, perf level {args.perf}, "
           f"patches: {', '.join(patches) or 'none'}", flush=True)
+    if args.tuned or args.metalfx:
+        print(f"DS3 settings requested: tuned={args.tuned}, MetalFX Native AA={args.metalfx}; "
+              "Bloodborne gameplay and performance are unverified.", flush=True)
     return subprocess.call(["bash", str(run)], cwd=ROOT, env=env)
 
 
@@ -174,6 +189,10 @@ def main():
                         help="with a patched --bbport-src build: make the FPS counter larger")
     parser.add_argument("--windowed", action="store_true", help="play in a window instead of fullscreen")
     parser.add_argument("--no-log", action="store_true", help="skip per-frame CSV recording (diagnostic logs remain)")
+    parser.add_argument("--tuned", action="store_true",
+                        help="try DS3's staging/fault-window/Retina/vblank settings (unmeasured in Bloodborne)")
+    parser.add_argument("--metalfx", action="store_true",
+                        help="request MetalFX Native AA for this launch without rewriting saved settings")
     parser.add_argument("--extra", action="append", default=[], metavar="PATCH_NAME",
                         help="enable an extra patch by its exact name in bbport's patch file (repeatable)")
     args = parser.parse_args()
