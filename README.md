@@ -1,12 +1,12 @@
 ```text
 Document:    Bloodborne on Mac
-Version:     v4.1.0
+Version:     v4.2.0
 Author:      Christopher Celaya
 Contact:     https://github.com/while-basic
 Date:        2026-10-22
-SHA256:      ebbf71576a73420274188a7f3ccfa3594e030f2d25b6a14fb7d23946a6082d00
+SHA256:      51a286f3642ebf1953afad01f95f78670baf681d35fb917999c39eecae675f64
 Chain:       solana-mainnet
-Tx:          XkyjZU77Ep3bTe24LVtPefyZyiYnH9QBwvKLVKPSLRhWpgBjVjzQRxwrtqSXx7jf4zxSuGNvNmu3NejCNgZzHfe
+Tx:          33PEXsQ99bZyAiSCj7DYCLTDCmp9wEirnsbzHJrfXqh2WsuNoAkeC3ZAYNXnYz4YQkFuSBi6gPTKvaPjDujNJAsw
 License:     The Unlicense (public domain dedication)
 ```
 
@@ -49,7 +49,24 @@ A few words that come up a lot:
 | **Rosetta** | Apple's helper for running Intel code on an Apple Silicon Mac. |
 | **Shader** | A little graphics program. Building these can slow the first visit to an area. |
 
+## Apple Metal does the graphics work
+
+**Apple's Metal framework is part of the normal graphics path.** bbport's
+renderer speaks Vulkan, and Mesa's **KosmicKrisp** driver brings that work to
+Metal on the Apple GPU. Rosetta 2 runs the game's Intel code. My launcher
+puts those pieces within reach of one command.
+
+The optional **MetalFX** setting uses Apple's MetalFX framework for Native AA:
+smoother edges at the same resolution. You can request it with `--metalfx`.
+Native AA does not create extra frames, and I have not measured a Bloodborne
+speed gain from it. The [Metal notes](docs/METAL.md) explain the frameworks,
+the settings I brought over from my DS3 project, and the remaining experiments.
+
 ## Where I'm at
+
+**My default is 1080p / 60 FPS cap / perf 3 / fullscreen.** I aim for
+**30–60 FPS at 1080p**. The cap is 60; 30 is a target, not a guaranteed floor.
+Busy fights and first-visit shader builds can dip below that range.
 
 At the same Central Yharnam lamp, my first bbport test held **56–59 FPS**.
 My later crowd session felt smoother and logged a **60 FPS median**, with
@@ -59,9 +76,10 @@ The dates and limits are in [my performance notes](PERFORMANCE.md).
 My next boss is **steady 60+ FPS in busy fights**, then **90+**.
 A million views do not add a million frames. I only share numbers I measured.
 
-The starting settings are **1080p / 60 FPS cap / perf 3 / fullscreen**.
-bbport is still experimental. Some effects are missing on Mac, objects can
-pop in, and busy scenes can slow down. Keep a good save backup.
+I also see a **very minor HUD glitch**: bars can blur or draw in pieces,
+and inventory icons can briefly flash on screen. It is a small visual blemish
+in my play. bbport is still experimental; some effects are missing on Mac,
+objects can pop in, and busy scenes can slow down. Keep a good save backup.
 
 ## My Mac
 
@@ -69,17 +87,42 @@ pop in, and busy scenes can slow down. Keep a good save backup.
 | --- | --- |
 | Mac | MacBook Pro with Apple M5 Max |
 | CPU / GPU | 18 CPU cores / 40 GPU cores |
-| Memory | 128 GB |
+| Memory | 128 GB unified memory |
 | macOS | 27.0 |
 | Engine | bbport for Mac, pinned release 0.4-v1 |
-| Graphics | Vulkan through KosmicKrisp and Metal |
+| Graphics | Vulkan through KosmicKrisp to Apple Metal; GPU reports Metal 4 support |
 | Game | CUSA00900, update 01.09 |
 
-These are my specs, not minimum requirements. The pinned
-[Mac port guide](https://github.com/bmy/bbport-mac/tree/0.4-v1) calls for
-Apple Silicon, macOS 26 or newer, and Rosetta 2. Check its current advice
-before buying anything. My wrapper targets **CUSA00900 / 01.09**; upstream's
-guide uses CUSA03173. Renaming another region's folder does not convert it.
+I checked these hardware and macOS specs on October 22, 2026. Metal 4 support
+is a GPU capability, not a claim that bbport uses every Metal 4 feature.
+You do not need to match my 128 GB to try this.
+
+### From the lowest tier to the biggest setup
+
+The pinned [Mac port guide](https://github.com/bmy/bbport-mac/blob/0.4-v1/docs/USER_GUIDE.md#what-you-need)
+starts at **Apple Silicon M1 or newer, macOS 26 or newer, and Rosetta 2**.
+It does not give a tested minimum memory size. The lowest *playable* Mac is
+still an open question; my measurements are from the M5 Max above.
+
+Here is how I would work up the ladder. These are starting points, not FPS
+benchmarks for Macs I have not tried. The lowest tier is an experiment with
+a Mac you already own.
+
+| Tier | Mac and memory | Where I would start | What I know |
+| --- | --- | --- | --- |
+| Lowest to try | Base M1 / M2, 8–16 GB | 720p, 60 FPS cap; aim for 30 first | Untested here; 8 GB leaves little room. I cannot promise playable speed. |
+| A step up | M1 Pro / M2 Pro or newer Pro, 16–32 GB | 900p, then 1080p; 60 FPS cap | Untested here; move up only if your frame times hold up. |
+| My ideal starting point | An M4 / M5 Pro or Max Mac with active cooling and 32 GB or more | **1080p / 60 cap / perf 3**, aiming for **30–60 FPS** | My hardware recommendation, not a measured result for every chip. |
+| My high-end reference | **M5 Max, 18 CPU / 40 GPU cores, 128 GB** | **1080p / 60 cap / perf 3** | 56–59 FPS at the lamp; a later crowd session logged a 60 FPS median with hitches. |
+| Highest picture settings to try | A high-end Max or Ultra Mac, 64 GB or more | 1440p, then 4K; keep the 60 cap first | Untested here. More GPU and memory do not remove the game's CPU limits. |
+
+My ideal pick has room for the game and its caches, plus fans for longer
+sessions. More memory alone does not buy more FPS. The launcher offers up to
+**4K and a 90 FPS cap**, but those are experiment settings, not a result I
+have reached. I would check current reports before buying a Mac for this.
+
+My wrapper targets **CUSA00900 / 01.09**; upstream's guide uses CUSA03173.
+Renaming another region's folder does not convert it.
 
 ## Mac setup
 
@@ -136,6 +179,9 @@ You need **Python 3.11 or newer**, Rosetta 2, and your own extracted game.
    ```sh
    python3 play.py
    ```
+
+   This uses **1080p with a 60 FPS cap**, aiming for the **30–60 FPS** range
+   above. You do not need extra flags for the default setup.
 
    Or double-click `Play Bloodborne.command`. If you downloaded a ZIP, run
    `chmod +x "Play Bloodborne.command"` once first.
